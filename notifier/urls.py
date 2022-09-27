@@ -16,6 +16,11 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+from notifications.views import NotificationView
+
 urlpatterns = [
     path('notifier/dev-console/', admin.site.urls),
+
+    # notifications
+    path('notifier/notifications', NotificationView.as_view()),
 ]
