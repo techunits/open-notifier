@@ -3,4 +3,4 @@ OpenSource notification engine with customized template support
 
 
 # default admin credentials
-notifier@example.org / password
+notifier@example.com / password

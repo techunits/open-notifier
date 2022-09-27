@@ -21,7 +21,7 @@ class Template(models.Model):
     modified_by = models.UUIDField()
     
     def __str__(self):
-        return self.slug
+        return self.ref
     
     class Meta:
         db_table = 'templates'

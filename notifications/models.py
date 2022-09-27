@@ -23,7 +23,7 @@ class Configuration(models.Model):
     id = models.UUIDField(
         primary_key = True, default = uuid.uuid4, editable = False
     )
-    type = models.CharField(max_length=100, choices=NOTIFICATION_TYPE_CHOICES, default="EMAIL")
+    config_type = models.CharField(max_length=100, choices=NOTIFICATION_TYPE_CHOICES, default="EMAIL")
     metadata = models.JSONField()
     is_enabled = models.BooleanField(default=True)
     is_deleted = models.BooleanField(default=False)
@@ -43,7 +43,7 @@ class NotificationLog(models.Model):
     id = models.UUIDField(
         primary_key = True, default = uuid.uuid4, editable = False
     )
-    entity_type = models.CharField(max_length=100, choices=NOTIFICATION_TYPE_CHOICES, default="EMAIL")
+    notification_type = models.CharField(max_length=100, choices=NOTIFICATION_TYPE_CHOICES, default="EMAIL")
     status = models.CharField(max_length=100, choices=NOTIFICATION_STATUS_CHOICES, default="QUEUED")
     metadata = models.JSONField()
     created_on = UnixTimeStampField(use_numeric=True, auto_now_add=True, default=timezone.now)
