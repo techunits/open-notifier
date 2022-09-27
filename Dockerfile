@@ -26,3 +26,4 @@ ENTRYPOINT ["/service/bootstrap.sh"]
 
 # exposing port
 EXPOSE 8050
+
