@@ -44,8 +44,6 @@ services:
     container_name: open-notifier-celery
     networks:
       - open-notifier-network
-    ports:
-      - 8050:8050
     environment:
       - APP_TYPE=celery
     depends_on:
