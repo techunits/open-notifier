@@ -4,6 +4,7 @@ from .models import Configuration, NotificationLog
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
+from .tasks import send_email_notification
 
 
 class NotificationView(APIView):
@@ -16,6 +17,8 @@ class NotificationView(APIView):
         notificationlog_obj = NotificationLog()
         notificationlog_obj.metadata = data
         notificationlog_obj.save()
+
+        send_email_notification.delay(notificationlog_obj.id)
 
         # TODO: create celery task with notification id
 

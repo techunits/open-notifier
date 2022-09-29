@@ -53,7 +53,7 @@ class NotificationLog(models.Model):
     modified_by = models.UUIDField(null=True, blank=True)
     
     def __str__(self):
-        return f'{self.entity_type}-{self.status}'
+        return f'{self.notification_type}-{self.status}'
     
     class Meta:
         db_table = 'notification_logs'

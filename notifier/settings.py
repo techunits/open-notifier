@@ -150,3 +150,6 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 CELERY_ALWAYS_EAGER = True
 CELERY_RESULT_BACKEND = BROKER_URL
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
