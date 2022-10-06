@@ -153,4 +153,4 @@ CELERY_ALWAYS_EAGER = True
 CELERY_RESULT_BACKEND = BROKER_URL
 
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
