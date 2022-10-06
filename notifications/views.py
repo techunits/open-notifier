@@ -17,6 +17,24 @@ class NotificationView(APIView):
         # POST Request Payload
         data = request.data
 
+        # Validate if to exists
+        to = data.get('to')
+        if not to:
+            return Response({
+                "error": {
+                    "message": "to list not provided"
+                }
+            }, status=400)
+
+        # Validate if subject exists
+        subject = data.get('subject')
+        if not subject:
+            return Response({
+                "error": {
+                    "message": "subject not provided"
+                }
+            }, status=400)
+
         # Validate if Payload of html exists
         payload = data.get('payload')
         if not payload:

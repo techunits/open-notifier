@@ -54,9 +54,20 @@ def send_email_notification(notification_id):
     )
 
     subject = notification_obj.metadata.get('subject')
+
     body = notification_obj.metadata.get('html')
+
     recipient_list = notification_obj.metadata.get('to')
-    from_email = config_obj.metadata.get("smtp_username")
+    if notification_obj.metadata.get('cc'):
+        for email in notification_obj.metadata.get('cc'):
+            recipient_list.append(email)
+    if notification_obj.metadata.get('bcc'):
+        for email in notification_obj.metadata.get('bcc'):
+            recipient_list.append(email)
+
+    from_email = notification_obj.metadata.get('from')
+    if not from_email:
+        from_email = config_obj.metadata.get("smtp_from_email")
 
     no_of_success = send_mail(
         subject=subject,
