@@ -6,9 +6,13 @@ from django.core.mail import (
     EmailMultiAlternatives
 )
 
+from django.core.mail.backends.smtp import EmailBackend
 from django.core.mail import send_mail
 
-from .models import NotificationLog
+from .models import (
+    NotificationLog,
+    Configuration
+)
 
 # @shared_task
 # def send_email_notification(subject, body, to=[]):
@@ -22,18 +26,33 @@ from .models import NotificationLog
 #         traceback.print_exc()
 #         print('email sending failed: ', e)
 
-
-
-
 @shared_task
 def send_email_notification(notification_id):
-
+    # pull up notification details
     try:
         notification_obj = NotificationLog.objects.get(id=notification_id)
     except Exception as e:
-        print("notification log not found")
+        print("notification entry not found")
 
-    print(notification_obj)
+    # pull up config details
+    try:
+        config_obj = Configuration.objects.get(
+            config_type="EMAIL", 
+            provider="LOCAL_EMAIL"
+        )
+    except Exception as e:
+        print("notification configuration not found")
+    
+
+    email_backend = EmailBackend(
+        host=config_obj.metadata.get("smtp_host"),
+        port=config_obj.metadata.get("smtp_port"),
+        password=config_obj.metadata.get("smtp_password"),
+        username=config_obj.metadata.get("smtp_username"),
+        use_tls=config_obj.metadata.get("smtp_tls", False),
+        fail_silently=False
+    )
+
 
     subject = notification_obj.metadata.get('subject')
     body = "TEST"
@@ -46,9 +65,8 @@ def send_email_notification(notification_id):
         message=body,
         from_email=from_email,
         recipient_list=recipient_list,
-        auth_user=from_email,
-        auth_password='19561956d!',
-        html_message=None,
+        connection=email_backend,
+        html_message=body,
     )
 
     if no_of_success:

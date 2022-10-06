@@ -10,15 +10,4 @@ class Command(BaseCommand):
         pass
 
     def handle(self, *args, **kwargs):
-        device_obj = Device.objects.get(pk=str(device_id))
-
-        storage =  storage = ZODB.FileStorage.FileStorage(os.path.join("qwerx.dummy.fs"))
-        db = ZODB.DB(storage)
-        connection = db.open()
-        device_config = connection.root
-        device_config.id = str(device_obj.pk)
-        device_config.lookup_token_index = device_obj.lookup_token_index
-        device_config.agent_token = device_obj.agent_token
-        device_config.network_id = network_id
-        transaction.commit()
-        connection.close()
+        pass
