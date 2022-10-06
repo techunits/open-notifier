@@ -53,12 +53,10 @@ def send_email_notification(notification_id):
         fail_silently=False
     )
 
-
     subject = notification_obj.metadata.get('subject')
-    body = "TEST"
+    body = notification_obj.metadata.get('html')
     recipient_list = notification_obj.metadata.get('to')
-
-    from_email = '2012shubho@gmail.com'
+    from_email = config_obj.metadata.get("smtp_username")
 
     no_of_success = send_mail(
         subject=subject,
