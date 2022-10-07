@@ -30,10 +30,21 @@ class Template(models.Model):
         template = DjangoTemplate(self.subject)
         self.notification_subject = template.render(Context(payload))
 
-    def send_notification(self, to, payload={}):
-        template = DjangoTemplate(self.body)
+    def set_body(self, payload={}):
+        template = DjangoTemplate(self.subject)
         self.notification_body = template.render(Context(payload))
-        
+
+    def schedule_notification(self, metadata):
+        # create notification enrtry
+        from notifications.models import NotificationLog
+        notificationlog_obj = NotificationLog()
+        notificationlog_obj.metadata = metadata
+        notificationlog_obj.save()
+        notification_id = str(notificationlog_obj.id)
+
+        # schedule task
         from notifications.tasks import send_email_notification
-        send_email_notification.delay(self.notification_subject, self.notification_body, to=to)
+        send_email_notification.delay(notification_id=notification_id)
+
+        return notification_id
 

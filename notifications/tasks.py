@@ -1,30 +1,15 @@
 import traceback
-from django.conf import settings
 from celery import shared_task
-from django.core.mail import (
-    BadHeaderError, 
-    EmailMultiAlternatives
-)
 
 from django.core.mail.backends.smtp import EmailBackend
-from django.core.mail import send_mail
+from django.core.mail import EmailMessage
+
 
 from .models import (
     NotificationLog,
     Configuration
 )
 
-# @shared_task
-# def send_email_notification(subject, body, to=[]):
-#     from_email = settings.SMTP_DEFAULT_FROM_EMAIL
-#     try:
-#         msg = EmailMultiAlternatives(subject=subject, body=body, from_email=from_email, to=to)
-#         msg.attach_alternative(body, "text/html")
-#         resp = msg.send(fail_silently = False)
-#         print('email sent successfully: ', resp)
-#     except BadHeaderError as e:
-#         traceback.print_exc()
-#         print('email sending failed: ', e)
 
 @shared_task
 def send_email_notification(notification_id):
@@ -41,9 +26,13 @@ def send_email_notification(notification_id):
             provider="LOCAL_EMAIL"
         )
     except Exception as e:
-        print("notification configuration not found")
+        traceback.print_exc()
+        print("MISSING_NOTIFICATION_CONFIG")
+        notification_obj.status = 'FAILED'
+        notification_obj.save()
+        return False
     
-
+    # initialize the SMTP connection params
     email_backend = EmailBackend(
         host=config_obj.metadata.get("smtp_host"),
         port=config_obj.metadata.get("smtp_port"),
@@ -52,34 +41,28 @@ def send_email_notification(notification_id):
         use_tls=config_obj.metadata.get("smtp_tls", False),
         fail_silently=False
     )
-
+    
     subject = notification_obj.metadata.get('subject')
-
     body = notification_obj.metadata.get('html')
-
-    recipient_list = notification_obj.metadata.get('to')
-    if notification_obj.metadata.get('cc'):
-        for email in notification_obj.metadata.get('cc'):
-            recipient_list.append(email)
-    if notification_obj.metadata.get('bcc'):
-        for email in notification_obj.metadata.get('bcc'):
-            recipient_list.append(email)
 
     from_email = notification_obj.metadata.get('from')
     if not from_email:
-        from_email = config_obj.metadata.get("smtp_from_email")
+        from_email = config_obj.metadata.get("smtp_from_email", 'test@example.com')
 
-    no_of_success = send_mail(
+    email_response = EmailMessage(
         subject=subject,
-        message=body,
+        body=body,
         from_email=from_email,
-        recipient_list=recipient_list,
-        connection=email_backend,
-        html_message=body,
+        to=notification_obj.metadata.get('to', []),
+        cc=notification_obj.metadata.get('cc', []),
+        bcc=notification_obj.metadata.get('bcc', []),
+        connection=email_backend
     )
 
-    if no_of_success:
+    if email_response:
         notification_obj.status = 'SUCCESS'
     else:
         notification_obj.status = 'FAILED'
+
+    print("Email: " + notification_obj.status)
     notification_obj.save()

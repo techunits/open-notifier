@@ -1,10 +1,11 @@
 from django.db import transaction
 from rest_framework.views import APIView
 
+from notifier.validators.validator import ValidateHandler
 from notifier.validators.errors import ErrorResponseException
 
 
-class URLValidatorView(APIView):
+class URLValidatorView(APIView, ValidateHandler):
     """
     view for running url param & other validations
     validator function example:
@@ -46,7 +47,7 @@ class URLValidatorView(APIView):
                 return validation_response
 
 
-class PayloadValidator:
+class PayloadValidator(ValidateHandler):
     """
     valdiate payload & save to db
     """

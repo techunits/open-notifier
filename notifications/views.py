@@ -1,101 +1,36 @@
+from importlib.metadata import metadata
 from django.shortcuts import render
 
-<<<<<<< HEAD
-from .models import NotificationLog
-=======
-from .models import Configuration, NotificationLog
 from templates.models import Template
->>>>>>> 16b26c84bf2296b25f8bf226766b221865ba2a86
-from rest_framework.views import APIView
 from rest_framework.response import Response
-
-from .tasks import send_email_notification
-
-<<<<<<< HEAD
-=======
-import jinja2
+from notifications.validators import (
+    NotificationURLValidatorView,
+    NotificationPayloadValidator
+)
 
 
->>>>>>> 16b26c84bf2296b25f8bf226766b221865ba2a86
-class NotificationView(APIView):
+class NotificationView(NotificationURLValidatorView):
     def post(self, request):
-<<<<<<< HEAD
-=======
+        # payload validation
+        payload = request.data
+        validator = NotificationPayloadValidator(
+            data=payload,
+            context={
+                "request": request,
+            }
+        )
+        validator.validate(required_fields=[
+            'to', 
+            'template_ref'
+        ])
 
-        # POST Request Payload
->>>>>>> 16b26c84bf2296b25f8bf226766b221865ba2a86
-        data = request.data
-
-        # Validate if to exists
-        to = data.get('to')
-        if not to:
-            return Response({
-                "error": {
-                    "message": "to list not provided"
-                }
-            }, status=400)
-
-        # Validate if subject exists
-        subject = data.get('subject')
-        if not subject:
-            return Response({
-                "error": {
-                    "message": "subject not provided"
-                }
-            }, status=400)
-
-        # Validate if Payload of html exists
-        payload = data.get('payload')
-        if not payload:
-            return Response({
-                "error":{
-                    "message": "payload not found"
-                }
-            }, status=400)
-
-        # Validate if template_ref exists
-        template_ref = data.get('template_ref')
-        if not template_ref:
-            return Response({
-                "error": {
-                    "message": "template_ref not found"
-                }
-            }, status=400)
-
-        # Validate template_ref
-        try:
-            template_obj = Template.objects.get(ref=template_ref)
-        except Exception as e:
-            return Response({
-                "error": {
-                    "message": "invalid template_ref"
-                }
-            }, status=400)
-
-        # Embed payload with template
-        html_body = template_obj.body
-        environment = jinja2.Environment()
-        template = environment.from_string(html_body)
-        final_html = template.render(payload)
-
-        # Insert final_html to the NotificationLog data
-        data['html'] = final_html
-
-        # Create Notification
-        notificationlog_obj = NotificationLog()
-        notificationlog_obj.metadata = data
-        notificationlog_obj.save()
-
-<<<<<<< HEAD
-
-
-=======
-        # celery task with notification id
->>>>>>> 16b26c84bf2296b25f8bf226766b221865ba2a86
-        send_email_notification.delay(notificationlog_obj.id)
+        # schedule email template based notification
+        validator.template.set_subject(payload)
+        validator.template.set_body(payload)
+        notification_id = validator.template.schedule_notification(metadata=payload)
 
         return Response({
             "notification": {
-                "id": notificationlog_obj.id
+                "id": notification_id
             }
         })
