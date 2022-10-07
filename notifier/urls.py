@@ -22,5 +22,5 @@ urlpatterns = [
     path('notifier/dev-console/', admin.site.urls),
 
     # notifications
-    path('notifier/notifications', NotificationView.as_view()),
+    path('notifier/tenants/<tenant_id>/notifications', NotificationView.as_view()),
 ]
