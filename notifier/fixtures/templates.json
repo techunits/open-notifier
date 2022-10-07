@@ -3,6 +3,7 @@
         "model": "templates.template",
         "pk": "29ac8c16-3c3e-4ed4-9837-3e17ee62a6a7",
         "fields": {
+            "tenant_id": "2714ebed-98b4-43d6-a3bb-698294493c8c",
             "name": "Notifier Sample Template",
             "ref": "NOTIFIER_SAMPLE_TEMPLATE",
             "subject": "Test Email Subject",

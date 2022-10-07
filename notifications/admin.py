@@ -5,9 +5,9 @@ from .models import (
 )
 
 class ConfigurationAdmin(admin.ModelAdmin):
-    list_display = ('id', 'config_type', 'metadata', 'is_enabled', 'created_on', 'modified_on')
+    list_display = ('id', 'tenant', 'config_type', 'metadata', 'is_enabled', 'created_on', 'modified_on')
 admin.site.register(Configuration, ConfigurationAdmin)
 
 class NotificationLogAdmin(admin.ModelAdmin):
-    list_display = ('id', 'notification_type', 'status', 'created_on')
+    list_display = ('id', 'tenant', 'notification_type', 'status', 'created_on')
 admin.site.register(NotificationLog, NotificationLogAdmin)

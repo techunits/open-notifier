@@ -5,6 +5,8 @@ python manage.py migrate;
 
 # load fixtures data database
 python manage.py loaddata notifier/fixtures/auth.json;
+python manage.py loaddata notifier/fixtures/tenants.json;
+python manage.py loaddata notifier/fixtures/configurations.json;
 python manage.py loaddata notifier/fixtures/templates.json;
 
 # migrate database

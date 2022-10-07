@@ -4,11 +4,14 @@ import uuid
 from django.utils import timezone
 from unixtimestampfield.fields import UnixTimeStampField
 from django.template import Template as DjangoTemplate, Context
+from tenants.models import Tenant
+
 
 class Template(models.Model):
     id = models.UUIDField(
         primary_key = True, default = uuid.uuid4, editable = False
     )
+    tenant = models.ForeignKey(Tenant, related_name='templates', on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     ref = models.CharField(max_length=255)
     subject = models.CharField(max_length=255, blank=True, null=True)

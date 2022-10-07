@@ -6,6 +6,7 @@ import uuid
 from django.utils import timezone
 from unixtimestampfield.fields import UnixTimeStampField
 from django.template import Template as DjangoTemplate, Context
+from tenants.models import Tenant
 
 NOTIFICATION_TYPE_CHOICES = [
     ("EMAIL", "EMAIL")
@@ -23,6 +24,7 @@ class Configuration(models.Model):
     id = models.UUIDField(
         primary_key = True, default = uuid.uuid4, editable = False
     )
+    tenant = models.ForeignKey(Tenant, related_name='configurations', on_delete=models.CASCADE)
     config_type = models.CharField(max_length=100, choices=NOTIFICATION_TYPE_CHOICES, default="EMAIL")
     provider = models.CharField(max_length=100, null=True, blank=True)
     metadata = models.JSONField()
@@ -44,6 +46,7 @@ class NotificationLog(models.Model):
     id = models.UUIDField(
         primary_key = True, default = uuid.uuid4, editable = False
     )
+    tenant = models.ForeignKey(Tenant, related_name='notification_logs', on_delete=models.CASCADE)
     notification_type = models.CharField(max_length=100, choices=NOTIFICATION_TYPE_CHOICES, default="EMAIL")
     status = models.CharField(max_length=100, choices=NOTIFICATION_STATUS_CHOICES, default="QUEUED")
     metadata = models.JSONField()
