@@ -7,7 +7,7 @@ networks:
 
 services:
   open-notifier-db:
-    image: postgres:14
+    image: postgres:14-bullseye
     container_name: open-notifier-db
     restart: always
     networks:
