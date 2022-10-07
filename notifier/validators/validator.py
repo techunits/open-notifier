@@ -63,5 +63,10 @@ class ValidateHandler:
 			return json_obj
 		except ValueError as e:
 			return None
-		
-
+	
+	@staticmethod
+	def get_or_none(classmodel, **kwargs):
+		try:
+			return classmodel.objects.get(**kwargs)
+		except classmodel.DoesNotExist:
+			return None

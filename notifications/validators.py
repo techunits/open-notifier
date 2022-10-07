@@ -4,10 +4,30 @@ from notifier.validators import (
     URLValidatorView,
     PayloadValidator
 )
+from tenants.models import Tenant
 
 
 class NotificationURLValidatorView(URLValidatorView):
-    pass
+    def validate_tenant_id(self, kwargs):
+        tenant_id = self.is_valid_uuid(kwargs.get('tenant_id'))
+        if tenant_id is None:
+            raise ErrorResponseException(
+                'INVALID_TENANT_ID', 
+                "Invalid tenant id supplied"
+            )
+        
+        from tenants.models import Tenant
+        self.tenant = self.get_or_none(
+            Tenant, 
+            pk=tenant_id, 
+            is_deleted=False
+        )
+        if self.tenant is None:
+            raise ErrorResponseException(
+                'INVALID_TENANT_ID', 
+                'Invalid Organization ID supplied',
+                status.HTTP_404_NOT_FOUND
+            )
 
 class NotificationPayloadValidator(PayloadValidator):
     def validate_to(self, to):
@@ -33,14 +53,17 @@ class NotificationPayloadValidator(PayloadValidator):
         try:
             from templates.models import Template
             self.template = Template.objects.get(
+                tenant=self.context.get('tenant'),
                 ref=template_ref, 
                 is_enabled=True,
                 is_deleted=False
             )
         except Template.DoesNotExist:
             raise ErrorResponseException(
-                'INVALID_TEMPLATE_REF', 'Invalid template reference supplied',
-                status.HTTP_400_BAD_REQUEST)
+                'INVALID_TEMPLATE_REF', 
+                'Invalid template reference supplied',
+                status.HTTP_400_BAD_REQUEST
+            )
         self.validated_data['template_ref'] = template_ref
         if self.instance is not None:
             self.instance.template_ref = template_ref

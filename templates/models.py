@@ -37,10 +37,11 @@ class Template(models.Model):
         template = DjangoTemplate(self.subject)
         self.notification_body = template.render(Context(payload))
 
-    def schedule_notification(self, metadata):
+    def schedule_notification(self, tenant_id, metadata):
         # create notification enrtry
         from notifications.models import NotificationLog
         notificationlog_obj = NotificationLog()
+        notificationlog_obj.tenant_id = tenant_id
         notificationlog_obj.metadata = metadata
         notificationlog_obj.save()
         notification_id = str(notificationlog_obj.id)
