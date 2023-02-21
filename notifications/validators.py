@@ -25,7 +25,7 @@ class NotificationURLValidatorView(URLValidatorView):
         if self.tenant is None:
             raise ErrorResponseException(
                 'INVALID_TENANT_ID', 
-                'Invalid Organization ID supplied',
+                'Invalid tenant ID supplied',
                 status.HTTP_404_NOT_FOUND
             )
 
@@ -34,7 +34,7 @@ class NotificationPayloadValidator(PayloadValidator):
         if len(to) == 0:
             raise ErrorResponseException(
                 'EMPTY_RECIPIENT_EMAIL', 
-                'Empty recipient email(s)',
+                'Invalid recipient email(s) supplied',
                 status.HTTP_400_BAD_REQUEST
             )
 

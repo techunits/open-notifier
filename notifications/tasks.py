@@ -22,7 +22,7 @@ def send_email_notification(notification_id):
     # pull up config details
     try:
         config_obj = Configuration.objects.get(
-            config_type="EMAIL", 
+            notification_type="EMAIL", 
             provider="LOCAL_EMAIL"
         )
     except Exception as e:

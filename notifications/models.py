@@ -25,7 +25,7 @@ class Configuration(models.Model):
         primary_key = True, default = uuid.uuid4, editable = False
     )
     tenant = models.ForeignKey(Tenant, related_name='configurations', on_delete=models.CASCADE)
-    config_type = models.CharField(max_length=100, choices=NOTIFICATION_TYPE_CHOICES, default="EMAIL")
+    notification_type = models.CharField(max_length=100, choices=NOTIFICATION_TYPE_CHOICES, default="EMAIL")
     provider = models.CharField(max_length=100, null=True, blank=True)
     metadata = models.JSONField()
     is_enabled = models.BooleanField(default=True)
@@ -36,7 +36,7 @@ class Configuration(models.Model):
     modified_by = models.UUIDField(null=True, blank=True)
     
     def __str__(self):
-        return f'{self.config_type} configuration'
+        return f'{self.notification_type} configuration'
     
     class Meta:
         db_table = 'configurations'
