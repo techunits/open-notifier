@@ -15,12 +15,25 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from django.urls import re_path
+from django.conf.urls.static import static
+from django.contrib.staticfiles.views import serve
+from django.conf import settings
+import re
 
 from notifications.views import NotificationView
+
+kwargs = {'document_root': settings.STATIC_ROOT}
+
 
 urlpatterns = [
     path('notifier/dev-console/', admin.site.urls),
 
     # notifications
     path('notifier/tenants/<tenant_id>/notifications', NotificationView.as_view()),
-]
+] 
+# + [re_path(
+#     r"^%s(?P<path>.*)$" % re.escape(settings.STATIC_URL.lstrip("/")), view=serve, kwargs=kwargs
+# )]
+
+# print(urlpatterns)

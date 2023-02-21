@@ -4,7 +4,7 @@
         "pk": "0402134f-39b3-49ed-8270-2e07b87fee42",
         "fields": {
             "tenant_id": "2714ebed-98b4-43d6-a3bb-698294493c8c",
-            "config_type": "EMAIL",
+            "notification_type": "EMAIL",
             "provider": "LOCAL_EMAIL",
             "metadata": {
                 "smtp_host": "smtp.example.com",

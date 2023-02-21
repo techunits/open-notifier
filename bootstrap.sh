@@ -10,7 +10,7 @@ python manage.py loaddata notifier/fixtures/configurations.json;
 python manage.py loaddata notifier/fixtures/templates.json;
 
 # migrate database
-python manage.py collectstatic --noinput
+python manage.py collectstatic --noinput;
 
 if [ "$APP_TYPE" = "celery" ]
 then
