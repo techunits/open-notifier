@@ -11,11 +11,14 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
 import os
+import sys
 from pathlib import Path
 
 # load ENV vars
 from dotenv import load_dotenv
 load_dotenv()
+
+APP_ENV = os.environ.get("APP_ENV", None)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,6 +31,41 @@ SECRET_KEY = 'django-insecure--v02wa5k*bvm__!jfst4&8=_z!dp5)o&!x)-rzz^exewwvl9sk
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+
+# setup logging
+import logging.config
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'filters': {
+        'trace_id': {
+            '()': 'notifier.middlewares.tracer.TraceIdFilter'
+        }
+    },
+    'formatters': {
+        'console': {
+            'format': "%(levelname)-1s: %(asctime)s [trace_id=%(trace_id)s] [%(name)-12s.%(funcName)s] %(message)s",
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO' if APP_ENV == 'PRODUCTION' else 'DEBUG',
+            'filters': ['trace_id'],
+            'class': 'logging.StreamHandler',
+            'formatter': 'console',
+            'stream': sys.stdout,
+        }
+    },
+    'loggers': {
+        '': {
+            'handlers': ['console'],
+            'level': 'INFO' if APP_ENV == 'PRODUCTION' else 'DEBUG',
+            'propagate': True,
+        }
+    },
+}
+logging.config.dictConfig(LOGGING)
+LOGGER = logging.getLogger(__name__)
 
 ALLOWED_HOSTS = ['*']
 
