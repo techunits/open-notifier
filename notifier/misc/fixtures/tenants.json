@@ -1,0 +1,15 @@
+[
+    {
+        "model": "tenants.tenant",
+        "pk": "2714ebed-98b4-43d6-a3bb-698294493c8c",
+        "fields": {
+            "name": "Default Tenant",
+            "is_enabled": true,
+            "is_deleted": false,
+            "created_on": 1665124583.777274,
+            "modified_on": 1665124583.777308,
+            "created_by": "d842af10-9b95-43ab-bf41-97651b5e437e",
+            "modified_by": "d842af10-9b95-43ab-bf41-97651b5e437e"
+        }
+    }
+]
