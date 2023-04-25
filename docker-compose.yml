@@ -45,7 +45,7 @@ services:
     networks:
       - open-notifier-network
     environment:
-      - APP_TYPE=service
+      - APP_TYPE=grpc
     ports:
       - 58051:50051
     depends_on:
