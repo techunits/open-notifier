@@ -1,11 +1,7 @@
-from email.policy import default
-from random import choices
-from re import template
 from django.db import models
 import uuid
 from django.utils import timezone
 from unixtimestampfield.fields import UnixTimeStampField
-from django.template import Template as DjangoTemplate, Context
 from tenants.models import Tenant
 
 NOTIFICATION_TYPE_CHOICES = [

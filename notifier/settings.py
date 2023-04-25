@@ -10,9 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
+from pathlib import Path
 import os
 import sys
-from pathlib import Path
+import grpc
 
 # load ENV vars
 from dotenv import load_dotenv
@@ -78,6 +79,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'django_grpc',
 
     'tenants',
     'templates',
@@ -177,6 +179,19 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         # 'rest_framework_simplejwt.authentication.JWTAuthentication'
     ],
+}
+
+# gRPC server config
+GRPCSERVER = {
+    'servicers': ['notifier.grpc.hooks.connector_hook'],
+    'maximum_concurrent_rpcs': None,
+    'options': [
+        ("grpc.max_receive_message_length", 1024 * 1024 * 100)
+    ],
+    # 'credentials': [{
+    #     'private_key': 'private_key.pem',
+    #     'certificate_chain': 'certificate_chain.pem'
+    # }]    # required only if SSL/TLS support is required to be enabled
 }
 
 # configure CELERY

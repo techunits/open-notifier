@@ -32,8 +32,3 @@ urlpatterns = [
     # notifications
     path('notifier/tenants/<tenant_id>/notifications', NotificationView.as_view()),
 ] 
-# + [re_path(
-#     r"^%s(?P<path>.*)$" % re.escape(settings.STATIC_URL.lstrip("/")), view=serve, kwargs=kwargs
-# )]
-
-# print(urlpatterns)
