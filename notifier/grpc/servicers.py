@@ -1,5 +1,4 @@
 import traceback
-import grpc
 from uuid import UUID
 from django.test.client import Client
 
@@ -11,7 +10,6 @@ from notifier.grpc.protoc import (
 # override default JSON encoder
 import json
 from json import JSONEncoder
-import os
 
 JSONEncoder_default = JSONEncoder.default
 
