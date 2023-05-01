@@ -32,12 +32,10 @@ class URLValidatorView(APIView, ValidateHandler):
 
         """
 
-        if hasattr(self, 'allowed_get_parmas'):
-            if not set(self.request.GET.keys()).issubset(
-                self.allowed_get_parmas
-            ):
+        if hasattr(self, "allowed_get_parmas"):
+            if not set(self.request.GET.keys()).issubset(self.allowed_get_parmas):
                 raise ErrorResponseException(
-                    'GENERAL_ERROR', 'Invalid get parameter supplied'
+                    "GENERAL_ERROR", "Invalid get parameter supplied"
                 )
 
         for var_name in kwargs:
@@ -77,8 +75,7 @@ class PayloadValidator(ValidateHandler):
         """
         unfiltered_payload = self.initial_data
         if type(unfiltered_payload) is not dict:
-            raise ErrorResponseException(
-                "INVALID_TYPE", "Payload must be valid json")
+            raise ErrorResponseException("INVALID_TYPE", "Payload must be valid json")
         payload = {}
         for field in unfiltered_payload:
             field_value = unfiltered_payload[field]
@@ -86,8 +83,7 @@ class PayloadValidator(ValidateHandler):
             if field_value is not None:
                 payload[field] = field_value
         if len(payload) < 1:
-            raise ErrorResponseException(
-                "MISSING_PAYLOAD", "Blank payload supplied")
+            raise ErrorResponseException("MISSING_PAYLOAD", "Blank payload supplied")
 
         no_matching_field_in_payload = True
         for var_name in payload:
@@ -105,19 +101,19 @@ class PayloadValidator(ValidateHandler):
                     err_ref = "MISSING_" + required_field.upper()
                     err_msg = "Missing " + required_field
                     if type(required_fields) is dict:
-                        missing_field_dict = required_fields[required_field].\
-                            get('missing', None)
+                        missing_field_dict = required_fields[required_field].get(
+                            "missing", None
+                        )
                         if missing_field_dict is not None:
-                            err_ref = missing_field_dict['ref']
-                            err_msg = missing_field_dict['message']
+                            err_ref = missing_field_dict["ref"]
+                            err_msg = missing_field_dict["message"]
                     raise ErrorResponseException(err_ref, err_msg)
 
         if not no_matching_field_in_payload:
             self.validate_dependent_fields()
 
         if no_matching_field_in_payload:
-            raise ErrorResponseException(
-                "MISSING_PAYLOAD", "Blank payload supplied")
+            raise ErrorResponseException("MISSING_PAYLOAD", "Blank payload supplied")
 
         return (
             (self.instance, self.validated_data)
@@ -158,8 +154,8 @@ class PayloadValidator(ValidateHandler):
                         raise e
                     except Exception as e:
                         raise ErrorResponseException(
-                            "GENERAL_ERROR",
-                            "Error while saving to db: " + str(e))
+                            "GENERAL_ERROR", "Error while saving to db: " + str(e)
+                        )
                 return self.save_actual()
         else:
             return self.save_actual()

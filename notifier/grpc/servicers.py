@@ -2,10 +2,7 @@ import traceback
 from uuid import UUID
 from django.test.client import Client
 
-from notifier.grpc.protoc import (
-    connector_pb2,
-    connector_pb2_grpc
-)
+from notifier.grpc.protoc import connector_pb2, connector_pb2_grpc
 
 # override default JSON encoder
 import json
@@ -40,19 +37,23 @@ class ConnectorServicer(connector_pb2_grpc.Connector):
     def getResponse(self, request, context):
         self.setup_client(request)
         self.request_method_name = request.request_method.lower()
-        payload = json.loads("{}" if len(getattr(request, "payload")) == 0 else request.payload)
-        incoming_headers = json.loads("{}" if len(getattr(request, "headers")) == 0 else request.headers)
+        payload = json.loads(
+            "{}" if len(getattr(request, "payload")) == 0 else request.payload
+        )
+        incoming_headers = json.loads(
+            "{}" if len(getattr(request, "headers")) == 0 else request.headers
+        )
         headers = dict()
         for key in incoming_headers:
             val = incoming_headers[key]
-            key = f'HTTP_{key.upper()}'
+            key = f"HTTP_{key.upper()}"
             headers[key] = val
 
         response = self.request_method(
-            request.endpoint, 
+            request.endpoint,
             payload,
             # content_type="application/json"
-            **headers
+            **headers,
         )
         try:
             response_data = json.dumps(response.data)

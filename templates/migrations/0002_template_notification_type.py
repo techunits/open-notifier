@@ -4,15 +4,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('templates', '0001_initial'),
+        ("templates", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='template',
-            name='notification_type',
-            field=models.CharField(choices=[('EMAIL', 'EMAIL')], default='EMAIL', max_length=50),
+            model_name="template",
+            name="notification_type",
+            field=models.CharField(
+                choices=[("EMAIL", "EMAIL")], default="EMAIL", max_length=50
+            ),
         ),
     ]

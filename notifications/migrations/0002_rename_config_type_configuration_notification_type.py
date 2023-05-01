@@ -4,15 +4,14 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('notifications', '0001_initial'),
+        ("notifications", "0001_initial"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='configuration',
-            old_name='config_type',
-            new_name='notification_type',
+            model_name="configuration",
+            old_name="config_type",
+            new_name="notification_type",
         ),
     ]

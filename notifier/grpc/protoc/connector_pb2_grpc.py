@@ -15,10 +15,10 @@ class ConnectorStub(object):
             channel: A grpc.Channel.
         """
         self.getResponse = channel.unary_unary(
-                '/GenericConnector.Connector/getResponse',
-                request_serializer=connector__pb2.GenericRequest.SerializeToString,
-                response_deserializer=connector__pb2.GenericResponse.FromString,
-                )
+            "/GenericConnector.Connector/getResponse",
+            request_serializer=connector__pb2.GenericRequest.SerializeToString,
+            response_deserializer=connector__pb2.GenericResponse.FromString,
+        )
 
 
 class ConnectorServicer(object):
@@ -27,40 +27,53 @@ class ConnectorServicer(object):
     def getResponse(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
 
 
 def add_ConnectorServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'getResponse': grpc.unary_unary_rpc_method_handler(
-                    servicer.getResponse,
-                    request_deserializer=connector__pb2.GenericRequest.FromString,
-                    response_serializer=connector__pb2.GenericResponse.SerializeToString,
-            ),
+        "getResponse": grpc.unary_unary_rpc_method_handler(
+            servicer.getResponse,
+            request_deserializer=connector__pb2.GenericRequest.FromString,
+            response_serializer=connector__pb2.GenericResponse.SerializeToString,
+        ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'GenericConnector.Connector', rpc_method_handlers)
+        "GenericConnector.Connector", rpc_method_handlers
+    )
     server.add_generic_rpc_handlers((generic_handler,))
 
 
- # This class is part of an EXPERIMENTAL API.
+# This class is part of an EXPERIMENTAL API.
 class Connector(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def getResponse(request,
+    def getResponse(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        insecure=False,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_unary(
+            request,
             target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/GenericConnector.Connector/getResponse',
+            "/GenericConnector.Connector/getResponse",
             connector__pb2.GenericRequest.SerializeToString,
             connector__pb2.GenericResponse.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )

@@ -7,27 +7,43 @@ import uuid
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Tenant',
+            name="Tenant",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('name', models.CharField(max_length=255)),
-                ('is_enabled', models.BooleanField(default=True)),
-                ('is_deleted', models.BooleanField(default=False)),
-                ('created_on', unixtimestampfield.fields.UnixTimeStampField(auto_now_add=True, default=django.utils.timezone.now)),
-                ('modified_on', unixtimestampfield.fields.UnixTimeStampField(auto_now=True, default=django.utils.timezone.now)),
-                ('created_by', models.UUIDField(blank=True, null=True)),
-                ('modified_by', models.UUIDField(blank=True, null=True)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("name", models.CharField(max_length=255)),
+                ("is_enabled", models.BooleanField(default=True)),
+                ("is_deleted", models.BooleanField(default=False)),
+                (
+                    "created_on",
+                    unixtimestampfield.fields.UnixTimeStampField(
+                        auto_now_add=True, default=django.utils.timezone.now
+                    ),
+                ),
+                (
+                    "modified_on",
+                    unixtimestampfield.fields.UnixTimeStampField(
+                        auto_now=True, default=django.utils.timezone.now
+                    ),
+                ),
+                ("created_by", models.UUIDField(blank=True, null=True)),
+                ("modified_by", models.UUIDField(blank=True, null=True)),
             ],
             options={
-                'db_table': 'tenants',
+                "db_table": "tenants",
             },
         ),
     ]

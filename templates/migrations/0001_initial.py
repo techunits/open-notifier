@@ -8,32 +8,56 @@ import uuid
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('tenants', '0001_initial'),
+        ("tenants", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Template',
+            name="Template",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('name', models.CharField(max_length=255)),
-                ('ref', models.CharField(max_length=255)),
-                ('subject', models.CharField(blank=True, max_length=255, null=True)),
-                ('body', models.TextField()),
-                ('is_enabled', models.BooleanField(default=True)),
-                ('is_deleted', models.BooleanField(default=False)),
-                ('created_on', unixtimestampfield.fields.UnixTimeStampField(auto_now_add=True, default=django.utils.timezone.now)),
-                ('modified_on', unixtimestampfield.fields.UnixTimeStampField(auto_now=True, default=django.utils.timezone.now)),
-                ('created_by', models.UUIDField()),
-                ('modified_by', models.UUIDField()),
-                ('tenant', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='templates', to='tenants.tenant')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("name", models.CharField(max_length=255)),
+                ("ref", models.CharField(max_length=255)),
+                ("subject", models.CharField(blank=True, max_length=255, null=True)),
+                ("body", models.TextField()),
+                ("is_enabled", models.BooleanField(default=True)),
+                ("is_deleted", models.BooleanField(default=False)),
+                (
+                    "created_on",
+                    unixtimestampfield.fields.UnixTimeStampField(
+                        auto_now_add=True, default=django.utils.timezone.now
+                    ),
+                ),
+                (
+                    "modified_on",
+                    unixtimestampfield.fields.UnixTimeStampField(
+                        auto_now=True, default=django.utils.timezone.now
+                    ),
+                ),
+                ("created_by", models.UUIDField()),
+                ("modified_by", models.UUIDField()),
+                (
+                    "tenant",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="templates",
+                        to="tenants.tenant",
+                    ),
+                ),
             ],
             options={
-                'db_table': 'templates',
+                "db_table": "templates",
             },
         ),
     ]
