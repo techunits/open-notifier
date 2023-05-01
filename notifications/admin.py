@@ -18,7 +18,7 @@ admin.site.register(Configuration, ConfigurationAdmin)
 
 
 class NotificationLogAdmin(admin.ModelAdmin):
-    list_display = ("id", "tenant", "notification_type", "status", "created_on")
+    list_display = ("id", "notification_ref", "status", "created_on")
 
 
 admin.site.register(NotificationLog, NotificationLogAdmin)
