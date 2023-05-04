@@ -4,17 +4,17 @@ from django.utils import timezone
 from unixtimestampfield.fields import UnixTimeStampField
 from tenants.models import Tenant
 
-
 NOTIFICATION_STATUS_CHOICES = [
     ("QUEUED", "QUEUED"),
     ("SUCCESS", "SUCCESS"),
     ("FAILED", "FAILED"),
 ]
 
-NOTIFICATION_TYPE_CHOICES = [("EMAIL", "EMAIL"), ("WHATSAPP", "WHATSAPP")]
+NOTIFICATION_TYPE_CHOICES = [("EMAIL", "EMAIL"), ("WHATSAPP", "WHATSAPP"), ("SMS", "SMS"),]
 
 PROVIDER_STATUS_CHOICES = [
     ("LOCAL_EMAIL", "LOCAL_EMAIL"),
+    ("INTERAKT", "INTERAKT"),
 ]
 
 

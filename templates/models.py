@@ -3,6 +3,7 @@ from django.db import models
 import uuid
 from django.utils import timezone
 from unixtimestampfield.fields import UnixTimeStampField
+from django.contrib.postgres.fields import ArrayField
 from django.template import Template as DjangoTemplate, Context
 from tenants.models import Tenant
 from notifications.models import NOTIFICATION_TYPE_CHOICES
@@ -13,8 +14,9 @@ class Template(models.Model):
     tenant = models.ForeignKey(
         Tenant, related_name="templates", on_delete=models.CASCADE
     )
-    notification_type = models.CharField(
-        max_length=50, choices=NOTIFICATION_TYPE_CHOICES, default="EMAIL"
+    notification_types = ArrayField(
+        models.CharField(choices=NOTIFICATION_TYPE_CHOICES, max_length=50, blank=True, default="EMAIL"),
+        default=["EMAIL"]
     )
     name = models.CharField(max_length=255)
     ref = models.CharField(max_length=255)
