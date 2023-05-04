@@ -57,6 +57,7 @@ class Template(models.Model):
 
         # schedule notification task
         from notifications.tasks import send_notification
+
         send_notification.delay(notification_id=notification_id)
 
         return notification_id

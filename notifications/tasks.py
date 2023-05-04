@@ -24,11 +24,17 @@ def send_notification(notification_id):
         f"{notification_obj.notification_ref.provider.lower()}.py",
     )
     if os.path.exists(integration_path):
-        logger.info(f"{notification_obj.notification_ref.notification_type} integration found({notification_id}): {notification_obj.notification_ref.provider}")
+        logger.info(
+            f"{notification_obj.notification_ref.notification_type} integration found({notification_id}): {notification_obj.notification_ref.provider}"
+        )
         # module_name = f"email.{notification_obj.notification_ref.provider.lower()}.send"
         # logger.debug(f"Importing module: {module_name}")
         # integration_module = importlib.import_module(module_name, package='.')
-        logger.info(f"Scheduling {notification_obj.notification_ref.notification_type} task({notification_id}): {notification_obj.notification_ref}")
+        logger.info(
+            f"Scheduling {notification_obj.notification_ref.notification_type} task({notification_id}): {notification_obj.notification_ref}"
+        )
         send_email_notification.delay(notification_id)
     else:
-        logger.error(f"{notification_obj.notification_ref.notification_type} integration found({notification_id}): {notification_obj.notification_ref.provider}")
+        logger.error(
+            f"{notification_obj.notification_ref.notification_type} integration found({notification_id}): {notification_obj.notification_ref.provider}"
+        )

@@ -9,6 +9,7 @@ from django.conf import settings
 
 logger = settings.LOGGER
 
+
 @shared_task
 def send(notification_id):
     # pull up notification details

@@ -40,9 +40,9 @@ class NotificationView(NotificationURLValidatorView):
         validator.template.set_subject(payload)
         validator.template.set_body(payload)
         notification_id = validator.template.schedule_notification(
-            tenant_id=self.tenant.id, 
+            tenant_id=self.tenant.id,
             notification_ref=notification_ref,
-            metadata=payload
+            metadata=payload,
         )
 
         return Response({"notification": {"id": notification_id}})
