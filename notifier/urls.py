@@ -25,6 +25,12 @@ urlpatterns = [
     path("notifier/dev-console/", admin.site.urls),
     # notifications
     path("notifier/tenants/<tenant_id>/notifications", NotificationView.as_view()),
-    re_path(r"^notifier/media/(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}),
-    re_path(r"^notifier/static/(?P<path>.*)$", serve, {"document_root": settings.STATIC_ROOT}),
+    re_path(
+        r"^notifier/media/(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}
+    ),
+    re_path(
+        r"^notifier/static/(?P<path>.*)$",
+        serve,
+        {"document_root": settings.STATIC_ROOT},
+    ),
 ]
