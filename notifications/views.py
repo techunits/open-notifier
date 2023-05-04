@@ -31,7 +31,7 @@ class NotificationView(NotificationURLValidatorView):
 
         notification_ref = Configuration.objects.filter(
             tenant=self.tenant,
-            notification_type__in=validator.template.notification_types,
+            notification_type__contains=validator.template.notification_types,
             is_default=True,
         ).first()
         if notification_ref is None:
