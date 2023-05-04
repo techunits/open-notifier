@@ -15,8 +15,13 @@ class Template(models.Model):
         Tenant, related_name="templates", on_delete=models.CASCADE
     )
     notification_types = ArrayField(
-        models.CharField(choices=NOTIFICATION_TYPE_CHOICES, max_length=50, blank=True, default="EMAIL"),
-        default=["EMAIL"]
+        models.CharField(
+            choices=NOTIFICATION_TYPE_CHOICES,
+            max_length=50,
+            blank=True,
+            default="EMAIL",
+        ),
+        default=["EMAIL"],
     )
     name = models.CharField(max_length=255)
     ref = models.CharField(max_length=255)

@@ -51,7 +51,9 @@ class NotificationView(NotificationURLValidatorView):
         # request param validation
         self.validate_request_params(tenant_id=tenant_id)
 
-        notifications = NotificationLog.objects.filter(notification_ref__tenant=self.tenant)
+        notifications = NotificationLog.objects.filter(
+            notification_ref__tenant=self.tenant
+        )
         return Response(
             {
                 "notifications": NotificationLogSerializer(
