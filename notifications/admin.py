@@ -19,6 +19,7 @@ admin.site.register(Configuration, ConfigurationAdmin)
 
 class NotificationLogAdmin(admin.ModelAdmin):
     list_display = ("id", "notification_ref", "status", "created_on")
+    list_filter = ("status",)
 
 
 admin.site.register(NotificationLog, NotificationLogAdmin)
