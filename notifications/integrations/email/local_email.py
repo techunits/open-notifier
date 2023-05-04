@@ -24,9 +24,9 @@ def send(notification_id):
     email_backend = EmailBackend(
         host=config_obj.metadata.get("smtp_host"),
         port=config_obj.metadata.get("smtp_port"),
-        password=config_obj.metadata.get("smtp_password"),
         username=config_obj.metadata.get("smtp_username"),
-        use_tls=config_obj.metadata.get("smtp_tls", False),
+        password=config_obj.metadata.get("smtp_password"),
+        use_tls=True,
         fail_silently=False,
     )
 
@@ -37,21 +37,25 @@ def send(notification_id):
     if not from_email:
         from_email = config_obj.metadata.get("smtp_from_email", "test@example.com")
 
-    email_response = EmailMessage(
-        subject=subject,
-        body=body,
-        from_email=from_email,
-        to=notification_obj.metadata.get("to", []),
-        cc=notification_obj.metadata.get("cc", []),
-        bcc=notification_obj.metadata.get("bcc", []),
-        connection=email_backend,
-    )
-
-    if email_response:
+    logger.info(f"Sending email to: {notification_obj.metadata.get('to', [])}")
+    logger.info(f"Sending email from: {from_email}")
+    logger.info(f"Subject: {subject}")
+    try:
+        email_msg_obj = EmailMessage(
+            subject=subject,
+            body=body,
+            from_email=from_email,
+            to=notification_obj.metadata.get("to", []),
+            cc=notification_obj.metadata.get("cc", []),
+            bcc=notification_obj.metadata.get("bcc", []),
+            connection=email_backend,
+        )
+        email_msg_obj.send()
         notification_obj.status = "SUCCESS"
-    else:
+    except Exception as e:
+        traceback.print_exc()
+        logger.error(e)
         notification_obj.status = "FAILED"
 
-    logger.debug(email_response)
     logger.info(f"{config_obj} Status({notification_id}): " + notification_obj.status)
     notification_obj.save()
