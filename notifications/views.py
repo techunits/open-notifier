@@ -20,7 +20,12 @@ class NotificationView(NotificationURLValidatorView):
         # payload validation
         payload = request.data
         validator = NotificationPayloadValidator(
-            data=payload, context={"request": request, "tenant": self.tenant}
+            data=payload,
+            context={
+                "request": request,
+                "tenant": self.tenant,
+                "notification_type": payload.get("notification_type", "EMAIL"),
+            },
         )
         validator.validate(required_fields=["to", "template_ref"])
 

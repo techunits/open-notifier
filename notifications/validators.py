@@ -49,6 +49,7 @@ class NotificationPayloadValidator(PayloadValidator):
 
             self.template = Template.objects.get(
                 tenant=self.context.get("tenant"),
+                notification_types__contains=[self.context.get("notification_type")],
                 ref=template_ref,
                 is_enabled=True,
                 is_deleted=False,
