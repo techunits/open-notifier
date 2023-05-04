@@ -31,7 +31,7 @@ def send(notification_id):
     )
 
     subject = notification_obj.metadata.get("subject")
-    body = notification_obj.metadata.get("html")
+    body = notification_obj.metadata.get("body")
 
     from_email = notification_obj.metadata.get("from")
     if not from_email:
@@ -50,6 +50,7 @@ def send(notification_id):
             bcc=notification_obj.metadata.get("bcc", []),
             connection=email_backend,
         )
+        email_msg_obj.content_subtype = "html"
         email_msg_obj.send()
         notification_obj.status = "SUCCESS"
     except Exception as e:

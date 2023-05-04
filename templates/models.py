@@ -49,12 +49,17 @@ class Template(models.Model):
         self.notification_subject = template.render(Context(payload))
 
     def set_body(self, payload={}):
-        template = DjangoTemplate(self.subject)
+        template = DjangoTemplate(self.body)
         self.notification_body = template.render(Context(payload))
 
     def schedule_notification(self, tenant_id, notification_ref, metadata):
         # create notification enrtry
         from notifications.models import NotificationLog
+
+        # set subject and body
+        metadata["body"] = self.notification_body
+        if metadata.get("subject", None) is None:
+            metadata["subject"] = self.notification_subject
 
         notificationlog_obj = NotificationLog()
         notificationlog_obj.notification_ref = notification_ref
@@ -64,7 +69,6 @@ class Template(models.Model):
 
         # schedule notification task
         from notifications.tasks import send_notification
-
         send_notification.delay(notification_id=notification_id)
 
         return notification_id
