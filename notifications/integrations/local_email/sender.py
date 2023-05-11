@@ -18,6 +18,8 @@ def send(notification_id):
     except Exception as e:
         logger.error(f"Invalid notification id: {notification_id}")
 
+    notification_obj.status = "PROCESSING"
+    notification_obj.save()
     config_obj = notification_obj.notification_ref
 
     # initialize the SMTP connection params
@@ -51,12 +53,22 @@ def send(notification_id):
             connection=email_backend,
         )
         email_msg_obj.content_subtype = "html"
-        email_msg_obj.send()
-        notification_obj.status = "SUCCESS"
+        # email_msg_obj.send()
+        response = {
+            "message": "SUCCESS",
+        }
+        status = "SUCCESS"
     except Exception as e:
         traceback.print_exc()
         logger.error(e)
-        notification_obj.status = "FAILED"
+        response = {
+            "error": str(e)
+        }
+        status = "FAILED"
 
+    notification_obj.status = status
+    notification_obj.metadata.update({
+        "response": response
+    })
     logger.info(f"{config_obj} Status({notification_id}): " + notification_obj.status)
     notification_obj.save()

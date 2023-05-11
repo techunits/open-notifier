@@ -3,11 +3,13 @@ from .models import Configuration, NotificationLog
 
 
 class ConfigurationAdmin(admin.ModelAdmin):
+    list_filter = ("notification_type", "is_default", "is_enabled", )
     list_display = (
         "id",
         "tenant",
         "notification_type",
         "metadata",
+        "is_default",
         "is_enabled",
         "created_on",
         "modified_on",

@@ -2,6 +2,7 @@ from rest_framework import status
 from notifier.validators.errors import ErrorResponseException
 from notifier.validators import URLValidatorView, PayloadValidator
 from tenants.models import Tenant
+from templates.models import Template
 
 
 class NotificationURLValidatorView(URLValidatorView):
@@ -25,7 +26,7 @@ class NotificationURLValidatorView(URLValidatorView):
 
 class NotificationPayloadValidator(PayloadValidator):
     def validate_to(self, to):
-        if len(to) == 0:
+        if to is None or len(to) == 0:
             raise ErrorResponseException(
                 "EMPTY_RECIPIENT_EMAIL",
                 "Invalid recipient email(s) supplied",
@@ -43,18 +44,40 @@ class NotificationPayloadValidator(PayloadValidator):
         if self.instance is not None:
             self.instance.to = to
 
-    def validate_template_ref(self, template_ref):
-        try:
-            from templates.models import Template
-
-            self.template = Template.objects.get(
-                tenant=self.context.get("tenant"),
-                notification_types__contains=[self.context.get("notification_type")],
-                ref=template_ref,
-                is_enabled=True,
-                is_deleted=False,
+    def validate_to_numbers(self, to_numbers):
+        if to_numbers is None or len(to_numbers) == 0:
+            raise ErrorResponseException(
+                "EMPTY_RECIPIENT_NUMBER",
+                "Invalid recipient number supplied",
+                status.HTTP_400_BAD_REQUEST,
             )
-        except Template.DoesNotExist:
+
+        # for email in to:
+        #     if self.is_valid_email(email) == False:
+        #         raise ErrorResponseException(
+        #             "INVALID_RECIPIENT_EMAIL",
+        #             "Invalid recipient email(s) supplied",
+        #             status.HTTP_400_BAD_REQUEST,
+        #         )
+        self.validated_data["to_numbers"] = to_numbers
+        if self.instance is not None:
+            self.instance.to_numbers = to_numbers
+
+    def validate_template_ref(self, template_ref):
+        query_params = {
+            "tenant": self.context.get("tenant"),
+            "ref": template_ref,
+            "is_enabled": True,
+            "is_deleted": False,
+        }
+        
+        if self.context.get("notification_type") is not None:
+            query_params["notification_types__contains"] = [
+                self.context.get("notification_type")
+            ]
+
+        self.templates = Template.objects.filter()
+        if self.templates.count() == 0:
             raise ErrorResponseException(
                 "INVALID_TEMPLATE_REF",
                 "Invalid template reference supplied",

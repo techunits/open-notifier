@@ -6,6 +6,7 @@ from tenants.models import Tenant
 
 NOTIFICATION_STATUS_CHOICES = [
     ("QUEUED", "QUEUED"),
+    ("PROCESSING", "PROCESSING"),
     ("SUCCESS", "SUCCESS"),
     ("FAILED", "FAILED"),
 ]

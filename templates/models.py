@@ -27,6 +27,7 @@ class Template(models.Model):
     ref = models.CharField(max_length=255)
     subject = models.CharField(max_length=255, blank=True, null=True)
     body = models.TextField()
+    addon_data = models.JSONField(blank=True, null=True)
     is_enabled = models.BooleanField(default=True)
     is_deleted = models.BooleanField(default=False)
     created_on = UnixTimeStampField(
@@ -57,6 +58,8 @@ class Template(models.Model):
         from notifications.models import NotificationLog
 
         # set subject and body
+        # print(self.notification_body)
+        metadata["addon_data"] = self.addon_data
         metadata["body"] = self.notification_body
         if metadata.get("subject", None) is None:
             metadata["subject"] = self.notification_subject
