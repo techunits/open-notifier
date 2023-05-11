@@ -53,7 +53,7 @@ def send(notification_id):
             connection=email_backend,
         )
         email_msg_obj.content_subtype = "html"
-        # email_msg_obj.send()
+        email_msg_obj.send()
         response = {
             "message": "SUCCESS",
         }

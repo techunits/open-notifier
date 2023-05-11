@@ -48,7 +48,6 @@ class NotificationView(NotificationURLValidatorView):
                         f"Notification configuration does not exist for {notification_type}",
                         status.HTTP_400_BAD_REQUEST,
                     )
-                    pass
 
                 # schedule email template based notification
                 validated_template.set_subject(payload=payload.get('payload'))
