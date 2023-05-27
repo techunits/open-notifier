@@ -8,6 +8,7 @@ class TemplateAdmin(admin.ModelAdmin):
         "tenant",
         "name",
         "ref",
+        "notification_types",
         "addon_data",
         "is_enabled",
         "created_on",
