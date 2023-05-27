@@ -1,5 +1,6 @@
 from re import template
 from django.db import models
+from rest_framework import status
 import uuid
 from django.utils import timezone
 from unixtimestampfield.fields import UnixTimeStampField
@@ -7,6 +8,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.template import Template as DjangoTemplate, Context
 from tenants.models import Tenant
 from notifications.models import NOTIFICATION_TYPE_CHOICES
+from notifier.validators.errors import ErrorResponseException
 
 
 class Template(models.Model):
@@ -46,12 +48,26 @@ class Template(models.Model):
         db_table = "templates"
 
     def set_subject(self, payload={}):
-        template = DjangoTemplate(self.subject)
-        self.notification_subject = template.render(Context(payload))
+        try:
+            template = DjangoTemplate(self.subject)
+            self.notification_subject = template.render(Context(payload))
+        except Exception as e:
+            raise ErrorResponseException(
+                "NOTIFICATION_TEMPLATE_RENDER_ERROR",
+                f"Notification template render error on subject: {e}",
+                status.HTTP_400_BAD_REQUEST,
+            )
 
     def set_body(self, payload={}):
-        template = DjangoTemplate(self.body)
-        self.notification_body = template.render(Context(payload))
+        try:
+            template = DjangoTemplate(self.body)
+            self.notification_body = template.render(Context(payload))
+        except Exception as e:
+            raise ErrorResponseException(
+                "NOTIFICATION_TEMPLATE_RENDER_ERROR",
+                f"Notification template render error on body: {e}",
+                status.HTTP_400_BAD_REQUEST,
+            )
 
     def schedule_notification(self, tenant_id, notification_ref, metadata):
         # create notification enrtry

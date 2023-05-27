@@ -76,7 +76,7 @@ class NotificationPayloadValidator(PayloadValidator):
                 self.context.get("notification_type")
             ]
 
-        self.templates = Template.objects.filter()
+        self.templates = Template.objects.filter(query_params)
         if self.templates.count() == 0:
             raise ErrorResponseException(
                 "INVALID_TEMPLATE_REF",
