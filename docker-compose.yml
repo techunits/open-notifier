@@ -37,6 +37,7 @@ services:
     depends_on:
       - "open-notifier-db"
       - "open-notifier-redis"
+    restart: always
     
   open-notifier-grpc:
     build:
@@ -51,6 +52,7 @@ services:
     depends_on:
       - "open-notifier-db"
       - "open-notifier-redis"
+    restart: always
 
   open-notifier-celery:
     build:
@@ -63,6 +65,7 @@ services:
     depends_on:
       - "open-notifier-db"
       - "open-notifier-redis"
+    restart: always
 
   open-notifier-socketio:
     build:
@@ -77,3 +80,4 @@ services:
     depends_on:
       - "open-notifier-db"
       - "open-notifier-redis"
+    restart: always
