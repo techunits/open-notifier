@@ -31,6 +31,7 @@ def send(notification_id):
     notification_obj.save()
     config_obj = notification_obj.notification_ref
     addon_data = notification_obj.metadata.get("addon_data", {})
+    addon_data = {} if addon_data is None else addon_data
 
     # processing traits
     # processed_traits: dict = {}
@@ -43,18 +44,37 @@ def send(notification_id):
     # initialize the SMTP connection params
     interakt_obj = InteraktNotification(config=config_obj.metadata)
 
-    for to_number in notification_obj.metadata.get("to_numbers", []):
-        is_sent, response = interakt_obj.send_whatsapp_message(
-            isd_code=to_number.get("isd_code"),
-            mobile_number=to_number.get("number"),
-            event=addon_data.get("interakt_event", None),
-            traits=processed_traits,
-        )
+    notification_obj.status = "FAILED"
 
-        if is_sent is True:
-            notification_obj.status = "SUCCESS"
-        else:
-            notification_obj.status = "FAILED"
+    # Use Case: MISSING_TARGET_MOBILE_NUMBERS
+    if len(notification_obj.metadata.get("to_numbers", [])) == 0:
+        response = {
+            "error": {
+                "ref": "MISSING_TARGET_MOBILE_NUMBERS",
+                "message": "Missing target mobile numbers"
+            }
+        }
+
+    # Use Case: MISSING_INTERAKT_EVENT
+    elif addon_data.get("interakt_event", None) is None:
+        response = {
+            "error": {
+                "ref": "MISSING_INTERAKT_EVENT",
+                "message": "Missing interakt_event in the notification request template"
+            }
+        }
+    
+    else:
+        for to_number in notification_obj.metadata.get("to_numbers", []):
+            is_sent, response = interakt_obj.send_whatsapp_message(
+                isd_code=to_number.get("isd_code"),
+                mobile_number=to_number.get("number"),
+                event=addon_data.get("interakt_event", None),
+                traits=processed_traits, 
+            )
+
+            if is_sent is True:
+                notification_obj.status = "SUCCESS"            
 
     notification_obj.metadata.update({"response": response})
     logger.info(f"{config_obj} Status({notification_id}): {notification_obj.status}")

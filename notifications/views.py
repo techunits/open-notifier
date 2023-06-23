@@ -34,7 +34,7 @@ class NotificationView(NotificationURLValidatorView):
         for validated_template in validator.templates:
             logger.debug(f"Requested template ref: {validated_template}")
             for notification_type in validated_template.notification_types:
-                logger.debug(f"Computed Notification type: {notification_type}")
+                logger.debug(f"Computed notification type: {notification_type}")
                 notification_ref = Configuration.objects.filter(
                     tenant=self.tenant,
                     notification_type=notification_type,
