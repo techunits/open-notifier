@@ -49,9 +49,6 @@ class NotificationView(NotificationURLValidatorView):
                         status.HTTP_400_BAD_REQUEST,
                     )
 
-                # schedule email template based notification
-                validated_template.set_subject(payload=payload.get('payload'))
-
                 # process payload if sent as list
                 body_payload = dict()
                 if type(payload.get('payload', {})) is list:
@@ -59,13 +56,18 @@ class NotificationView(NotificationURLValidatorView):
                         body_payload[item.get('key')] = item.get('value')
                 else:
                     body_payload = payload.get('payload', {})
+
+                validated_template.set_subject(payload=body_payload)
                 validated_template.set_body(payload=body_payload)
 
+                # schedule email template based notification
                 logger.info(f"Scheduling notification task({notification_type}): ")
                 notification_id = validated_template.schedule_notification(
                     tenant_id=self.tenant.id,
                     notification_ref=notification_ref,
-                    metadata=payload,
+                    metadata={
+                        "payload": body_payload,
+                    }
                 )
                 notifications.append({"id": notification_id})
 

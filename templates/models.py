@@ -74,7 +74,6 @@ class Template(models.Model):
         from notifications.models import NotificationLog
 
         # set subject and body
-        # print(self.notification_body)
         metadata["template_ref"] = self.ref
         metadata["addon_data"] = self.addon_data
         metadata["body"] = self.notification_body
