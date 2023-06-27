@@ -103,9 +103,9 @@ class InteraktNotification:
             return True, response.json()
         else:
             logger.error(
-                f"Failed to create interakt user(+{isd_code}-{mobile_number}): {response.json()}"
+                f"Failed to create interakt user(+{isd_code}-{mobile_number}): {response.text}"
             )
-            return False, response.json()
+            return False, response.text
 
     def send_whatsapp_message(self, isd_code, mobile_number, event, traits):
         api_url = f"{self.config.get('INTERAKT_BASE_URL')}/public/track/events/"
@@ -129,8 +129,8 @@ class InteraktNotification:
                 return True, response.json()
             else:
                 logger.error(
-                    f"Failed to send message to user(+{isd_code}-{mobile_number}): {response.json()}"
+                    f"Failed to send message to user(+{isd_code}-{mobile_number}): {response.text}"
                 )
-                return False, response.json()
+                return False, response.text
 
         return is_created, user_response
