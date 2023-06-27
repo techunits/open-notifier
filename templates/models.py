@@ -75,6 +75,7 @@ class Template(models.Model):
 
         # set subject and body
         # print(self.notification_body)
+        metadata["template_ref"] = self.ref
         metadata["addon_data"] = self.addon_data
         metadata["body"] = self.notification_body
         if metadata.get("subject", None) is None:

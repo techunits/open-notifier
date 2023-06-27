@@ -55,21 +55,17 @@ def send(notification_id):
             }
         }
 
-    # Use Case: MISSING_INTERAKT_EVENT
-    elif addon_data.get("interakt_event", None) is None:
-        response = {
-            "error": {
-                "ref": "MISSING_INTERAKT_EVENT",
-                "message": "Missing interakt_event in the notification request template"
-            }
-        }
-    
     else:
+        # Use Case: MISSING_INTERAKT_EVENT
+        interakt_event = addon_data.get("interakt_event", None)
+        if interakt_event is None:
+            interakt_event = notification_obj.metadata.get("template_ref")
+        
         for to_number in notification_obj.metadata.get("to_numbers", []):
             is_sent, response = interakt_obj.send_whatsapp_message(
                 isd_code=to_number.get("isd_code"),
                 mobile_number=to_number.get("number"),
-                event=addon_data.get("interakt_event", None),
+                event=interakt_event,
                 traits=processed_traits, 
             )
 
