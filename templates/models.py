@@ -69,7 +69,7 @@ class Template(models.Model):
                 status.HTTP_400_BAD_REQUEST,
             )
 
-    def schedule_notification(self, tenant_id, notification_ref, metadata):
+    def schedule_notification(self, tenant_id, notification_ref, metadata={}):
         # create notification enrtry
         from notifications.models import NotificationLog
 

@@ -51,8 +51,8 @@ class NotificationView(NotificationURLValidatorView):
 
                 # process payload if sent as list
                 body_payload = dict()
-                if type(payload.get('payload', {})) is list:
-                    for item in payload.get('payload'):
+                if type(payload.get('payload', [])) is list:
+                    for item in payload.get('payload', []):
                         body_payload[item.get('key')] = item.get('value')
                 else:
                     body_payload = payload.get('payload', {})
@@ -67,6 +67,10 @@ class NotificationView(NotificationURLValidatorView):
                     notification_ref=notification_ref,
                     metadata={
                         "payload": body_payload,
+                        "to_numbers": payload.get('to_numbers', []),
+                        "to": payload.get('to', []),
+                        "cc": payload.get('cc', []),
+                        "bcc": payload.get('bcc', []),
                     }
                 )
                 notifications.append({"id": notification_id})
