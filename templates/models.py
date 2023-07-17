@@ -80,11 +80,11 @@ class Template(models.Model):
         if metadata.get("subject", None) is None:
             metadata["subject"] = self.notification_subject
 
-        notificationlog_obj = NotificationLog()
-        notificationlog_obj.notification_ref = notification_ref
-        notificationlog_obj.metadata = metadata
-        notificationlog_obj.save()
-        notification_id = str(notificationlog_obj.id)
+        notification_log_obj = NotificationLog()
+        notification_log_obj.notification_ref = notification_ref
+        notification_log_obj.metadata = metadata
+        notification_log_obj.save()
+        notification_id = str(notification_log_obj.id)
 
         # schedule notification task
         from notifications.tasks import send_notification
