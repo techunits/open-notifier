@@ -52,7 +52,7 @@ def send(notification_id):
     if template_obj is not None:
         payload = notification_obj.metadata.get("payload", {})
         for template_var in extract_variables(template_obj.body):
-            processed_traits.append(payload.get(template_var, None))
+            processed_traits.append(payload.get(template_var, "#####"))
 
     logger.info(f"Interakt template ref: {notification_obj.notification_ref.notification_type}::{template_ref}")
     logger.info(f"Interakt payload: {processed_traits}")
