@@ -23,8 +23,8 @@ then
 elif [ "$APP_TYPE" = "grpc" ]
 then
     # start celery task queue worker
-    python manage.py grpcserver
+    python manage.py grpcserver --port 50080
 else
     # start app service
-    uwsgi --master --single-interpreter --protocol http --module notifier.wsgi:application --socket 0.0.0.0:8000 --workers 4 --max-requests=1024 --backlog 256 --harakiri=8 --vacuum --gevent 1024 --lazy
+    uwsgi --master --single-interpreter --protocol http --module notifier.wsgi:application --socket 0.0.0.0:8050 --workers 4 --max-requests=1024 --backlog 256 --harakiri=8 --vacuum --gevent 1024 --lazy
 fi
