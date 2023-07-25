@@ -33,7 +33,7 @@ services:
     environment:
       - APP_TYPE=service
     ports:
-      - 8050:8000
+      - 8050:8050
     depends_on:
       - "open-notifier-db"
       - "open-notifier-redis"
@@ -48,7 +48,7 @@ services:
     environment:
       - APP_TYPE=grpc
     ports:
-      - 58051:50051
+      - 50080:50080
     depends_on:
       - "open-notifier-db"
       - "open-notifier-redis"
@@ -74,7 +74,7 @@ services:
     networks:
       - open-notifier-network
     ports:
-      - 8151:3000
+      - 8151:8151
     environment:
       - APP_TYPE=socketio
     depends_on:
