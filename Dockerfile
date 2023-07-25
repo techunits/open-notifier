@@ -25,4 +25,4 @@ RUN chmod +x bootstrap.sh
 ENTRYPOINT ["/service/bootstrap.sh"]
 
 # exposing port
-EXPOSE 8000 3000 50051
+EXPOSE 8050 8151 50080

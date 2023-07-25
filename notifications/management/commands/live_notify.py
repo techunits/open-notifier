@@ -53,4 +53,4 @@ class Command(BaseCommand):
         asyncio.run(self.__run())
 
     def __run(self):
-        web.run_app(app, host="0.0.0.0", port=3000)
+        web.run_app(app, host="0.0.0.0", port=8151)
