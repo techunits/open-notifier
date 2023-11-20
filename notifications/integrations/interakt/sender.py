@@ -167,12 +167,12 @@ class InteraktNotification:
 
         response = requests.post(endpoint, headers=self.headers, json=payload)
         if response.status_code in [200, 201, 202]:
-            logger.info(
+            print(
                 f"Sent message to user({isd_code}-{mobile_number}): {response.json()}"
             )
-            return True, response.json()
+            return True
         else:
-            logger.error(
+            print(
                 f"Failed to send message to user({isd_code}-{mobile_number}): {response.text}"
             )
-            return False, response.text
+            return False

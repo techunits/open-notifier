@@ -11,7 +11,6 @@ from notifier.validators.errors import ErrorResponseException
 
 logger = settings.LOGGER
 
-
 class NotificationView(NotificationURLValidatorView):
     def post(self, request, tenant_id):
         # request param validation

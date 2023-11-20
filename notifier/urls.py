@@ -19,12 +19,14 @@ from django.urls import re_path
 from django.contrib.staticfiles.views import serve
 from django.conf import settings
 from django.views.static import serve
+from templates.views import TemplateView
 from notifications.views import NotificationView
 
 urlpatterns = [
     path("notifier/dev-console/", admin.site.urls),
     # notifications
     path("notifier/tenants/<tenant_id>/notifications", NotificationView.as_view()),
+    path("notifier/tenants/<tenant_id>/templates", TemplateView.as_view()),
     re_path(
         r"^notifier/media/(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}
     ),
