@@ -54,8 +54,15 @@ def send(notification_id):
         for template_var in extract_variables(template_obj.body):
             processed_traits.append(payload.get(template_var, "#####"))
 
+    # processing buttons
+    processed_buttons = dict()
+    for idx, item in enumerate(payload.get("LINK")):
+        processed_buttons[str(idx)] = [item]
+
+
     logger.info(f"Interakt template ref: {notification_obj.notification_ref.notification_type}::{template_ref}")
-    logger.info(f"Interakt payload: {processed_traits}")
+    logger.info(f"Interakt body payload: {processed_traits}")
+    logger.info(f"Interakt button payload: {processed_buttons}")
 
     # initialize the SMTP connection params
     interakt_obj = InteraktNotification(config=config_obj.metadata)
@@ -84,6 +91,7 @@ def send(notification_id):
                 mobile_number=to_number.get("number"),
                 event=interakt_event,
                 traits=processed_traits, 
+                buttons=processed_buttons
             )
 
             if is_sent is True:
@@ -152,7 +160,7 @@ class InteraktNotification:
 
         return is_created, user_response
     
-    def send_message(self, isd_code, mobile_number, event, traits):
+    def send_message(self, isd_code, mobile_number, event, traits, buttons):
         endpoint = f"{self.config.get('INTERAKT_BASE_URL')}/public/message/"
         payload = {
             "countryCode": isd_code,
@@ -161,7 +169,8 @@ class InteraktNotification:
             "template": {
                 "name": event.lower(),
                 "languageCode": "en",
-                "bodyValues": traits
+                "bodyValues": traits,
+                "buttonValues": buttons
             }
         }
 
