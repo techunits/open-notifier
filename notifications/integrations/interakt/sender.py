@@ -56,7 +56,7 @@ def send(notification_id):
 
     # processing buttons
     processed_buttons = dict()
-    for idx, item in enumerate(payload.get("LINK")):
+    for idx, item in enumerate(payload.get("LINK", [])):
         processed_buttons[str(idx+1)] = [item]
 
 
