@@ -76,6 +76,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "corsheaders",
     "django_grpc",
     "tenants",
     "templates",
@@ -90,6 +91,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "notifier.middlewares.tracer.TracerMiddleware",
 ]
 
@@ -176,6 +178,9 @@ REST_FRAMEWORK = {
         # 'rest_framework_simplejwt.authentication.JWTAuthentication'
     ],
 }
+
+# cors config
+CORS_ORIGIN_ALLOW_ALL = True
 
 # gRPC server config
 GRPCSERVER = {
