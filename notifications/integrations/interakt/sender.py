@@ -179,9 +179,9 @@ class InteraktNotification:
             print(
                 f"Sent message to user({isd_code}-{mobile_number}): {response.json()}"
             )
-            return True
+            return True, response.json()
         else:
             print(
                 f"Failed to send message to user({isd_code}-{mobile_number}): {response.text}"
             )
-            return False
+            return False, response.json()
