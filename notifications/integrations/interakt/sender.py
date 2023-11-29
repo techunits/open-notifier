@@ -57,7 +57,7 @@ def send(notification_id):
     # processing buttons
     processed_buttons = dict()
     for idx, item in enumerate(payload.get("LINK", [])):
-        processed_buttons[str(idx+1)] = [item]
+        processed_buttons[str(idx)] = [item]
 
 
     logger.info(f"Interakt template ref: {notification_obj.notification_ref.notification_type}::{template_ref}")
