@@ -82,7 +82,7 @@ class NotificationView(NotificationURLValidatorView):
 
         notifications = NotificationLog.objects.filter(
             notification_ref__tenant=self.tenant
-        )
+        )[:25]
         return Response(
             {
                 "notifications": NotificationLogSerializer(
