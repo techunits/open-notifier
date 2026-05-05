@@ -1,7 +1,9 @@
 # Use the official Python image from the Docker Hub
-FROM python:3.10-slim-bullseye
+FROM python:3.12-slim-bullseye
 
-RUN apt-get update && apt-get upgrade -y && apt-get install -y python3-dev gcc libev-dev libpq-dev
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y python3-dev gcc libev-dev libpq-dev
 
 # make a new directory to put our code in.
 RUN mkdir /service/
@@ -13,7 +15,8 @@ COPY . /service/
 WORKDIR /service
 
 # upgrade pip
-RUN pip install --upgrade pip && pip install wheel 
+RUN pip install --upgrade pip && \
+    pip install wheel 
 
 # install the requirements
 RUN pip install -r requirements.txt

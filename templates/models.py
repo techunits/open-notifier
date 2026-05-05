@@ -23,7 +23,7 @@ class Template(models.Model):
             blank=True,
             default="EMAIL",
         ),
-        default=["EMAIL"],
+        default=list,
     )
     name = models.CharField(max_length=255)
     ref = models.CharField(max_length=255)

@@ -1,5 +1,3 @@
-version: '3.7'
-
 networks:
   open-notifier-network:
     name: open-notifier-network
