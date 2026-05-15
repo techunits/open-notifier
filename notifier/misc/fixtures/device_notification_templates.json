@@ -1,0 +1,97 @@
+[
+  {
+    "model": "templates.template",
+    "pk": "a1000001-0001-4001-8001-000000000001",
+    "fields": {
+      "tenant_id": "74949ab8-18b0-4abe-a460-44de0352cb71",
+      "name": "Device Rogue Alert",
+      "ref": "DEVICE_ROGUE",
+      "notification_types": ["EMAIL"],
+      "subject": "ALERT - Rogue Device Detected",
+      "body": "<p>QWERX detected an unauthorized device event on network <strong>{{ network.name }}</strong>.</p><p><strong>Device:</strong> {{ device.name }} ({{ device.id }})<br><strong>MAC:</strong> {{ device.mac_address }}<br><strong>Status:</strong> {{ device.status }}<br><strong>Reason:</strong> {{ reason }}<br><strong>Time:</strong> {{ system_time }} {{ date }}</p>",
+      "addon_data": null,
+      "is_enabled": true,
+      "is_deleted": false,
+      "created_on": 1715760000.0,
+      "modified_on": 1715760000.0,
+      "created_by": "d842af10-9b95-43ab-bf41-97651b5e437e",
+      "modified_by": "d842af10-9b95-43ab-bf41-97651b5e437e"
+    }
+  },
+  {
+    "model": "templates.template",
+    "pk": "a1000002-0002-4002-8002-000000000002",
+    "fields": {
+      "tenant_id": "74949ab8-18b0-4abe-a460-44de0352cb71",
+      "name": "Device Cloned Alert",
+      "ref": "DEVICE_CLONED",
+      "notification_types": ["EMAIL"],
+      "subject": "ALERT - Cloned Device Detected",
+      "body": "<p>A cloned device attempt was detected on network <strong>{{ network.name }}</strong>.</p><p><strong>Device:</strong> {{ device.name }} ({{ device.id }})<br><strong>MAC:</strong> {{ device.mac_address }}<br><strong>Reason:</strong> {{ reason }}<br><strong>Time:</strong> {{ system_time }} {{ date }}</p>",
+      "addon_data": null,
+      "is_enabled": true,
+      "is_deleted": false,
+      "created_on": 1715760000.0,
+      "modified_on": 1715760000.0,
+      "created_by": "d842af10-9b95-43ab-bf41-97651b5e437e",
+      "modified_by": "d842af10-9b95-43ab-bf41-97651b5e437e"
+    }
+  },
+  {
+    "model": "templates.template",
+    "pk": "a1000003-0003-4003-8003-000000000003",
+    "fields": {
+      "tenant_id": "74949ab8-18b0-4abe-a460-44de0352cb71",
+      "name": "Device Reprovisioned",
+      "ref": "DEVICE_REPROVISIONED",
+      "notification_types": ["EMAIL"],
+      "subject": "Device Reprovisioned on QWERX",
+      "body": "<p>Hi {{ user.first_name }},</p><p>Your device <strong>{{ device.name }}</strong> on network <strong>{{ network.name }}</strong> was reprovisioned.</p><p><strong>Device ID:</strong> {{ device.id }}<br><strong>MAC:</strong> {{ device.mac_address }}<br><strong>Time:</strong> {{ system_time }} {{ date }}</p>",
+      "addon_data": null,
+      "is_enabled": true,
+      "is_deleted": false,
+      "created_on": 1715760000.0,
+      "modified_on": 1715760000.0,
+      "created_by": "d842af10-9b95-43ab-bf41-97651b5e437e",
+      "modified_by": "d842af10-9b95-43ab-bf41-97651b5e437e"
+    }
+  },
+  {
+    "model": "templates.template",
+    "pk": "a1000004-0004-4004-8004-000000000004",
+    "fields": {
+      "tenant_id": "74949ab8-18b0-4abe-a460-44de0352cb71",
+      "name": "Device Onboarding Approved",
+      "ref": "DEVICE_ONBOARDING_APPROVED",
+      "notification_types": ["EMAIL"],
+      "subject": "Device Onboarding Approved",
+      "body": "<p>Hi {{ user.first_name }},</p><p>Onboarding for device <strong>{{ device.name }}</strong> on network <strong>{{ network.name }}</strong> was <strong>approved</strong>.</p><p><strong>Device ID:</strong> {{ device.id }}<br><strong>MAC:</strong> {{ device.mac_address }}<br><strong>Time:</strong> {{ system_time }} {{ date }}</p>",
+      "addon_data": null,
+      "is_enabled": true,
+      "is_deleted": false,
+      "created_on": 1715760000.0,
+      "modified_on": 1715760000.0,
+      "created_by": "d842af10-9b95-43ab-bf41-97651b5e437e",
+      "modified_by": "d842af10-9b95-43ab-bf41-97651b5e437e"
+    }
+  },
+  {
+    "model": "templates.template",
+    "pk": "a1000005-0005-4005-8005-000000000005",
+    "fields": {
+      "tenant_id": "74949ab8-18b0-4abe-a460-44de0352cb71",
+      "name": "Device Onboarding Rejected",
+      "ref": "DEVICE_ONBOARDING_REJECTED",
+      "notification_types": ["EMAIL"],
+      "subject": "Device Onboarding Rejected",
+      "body": "<p>Hi {{ user.first_name }},</p><p>Onboarding for device <strong>{{ device.name }}</strong> on network <strong>{{ network.name }}</strong> was <strong>rejected</strong>.</p><p><strong>Device ID:</strong> {{ device.id }}<br><strong>MAC:</strong> {{ device.mac_address }}<br><strong>Time:</strong> {{ system_time }} {{ date }}</p>",
+      "addon_data": null,
+      "is_enabled": true,
+      "is_deleted": false,
+      "created_on": 1715760000.0,
+      "modified_on": 1715760000.0,
+      "created_by": "d842af10-9b95-43ab-bf41-97651b5e437e",
+      "modified_by": "d842af10-9b95-43ab-bf41-97651b5e437e"
+    }
+  }
+]

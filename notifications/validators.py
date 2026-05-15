@@ -17,11 +17,9 @@ class NotificationURLValidatorView(URLValidatorView):
 
         self.tenant = self.get_or_none(Tenant, pk=tenant_id, is_deleted=False)
         if self.tenant is None:
-            raise ErrorResponseException(
-                "INVALID_TENANT_ID",
-                "Invalid tenant ID supplied",
-                status.HTTP_404_NOT_FOUND,
-            )
+            from notifications.tenant_setup import provision_tenant_for_notifications
+
+            self.tenant = provision_tenant_for_notifications(tenant_id)
 
 
 class NotificationPayloadValidator(PayloadValidator):
@@ -76,8 +74,8 @@ class NotificationPayloadValidator(PayloadValidator):
                 self.context.get("notification_type")
             ]
 
-        self.templates = Template.objects.filter()
-        if self.templates.count() == 0:
+        self.templates = Template.objects.filter(**query_params)
+        if not self.templates.exists():
             raise ErrorResponseException(
                 "INVALID_TEMPLATE_REF",
                 "Invalid template reference supplied",

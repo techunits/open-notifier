@@ -46,13 +46,13 @@ class ConnectorServicer(connector_pb2_grpc.Connector):
         headers = dict()
         for key in incoming_headers:
             val = incoming_headers[key]
-            key = f"HTTP_{key.upper()}"
+            key = f"HTTP_{key.upper().replace('-', '_')}"
             headers[key] = val
 
         response = self.request_method(
             request.endpoint,
             payload,
-            # content_type="application/json"
+            content_type="application/json",
             **headers,
         )
         try:

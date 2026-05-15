@@ -61,6 +61,9 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 
+# Collected static files (STATIC_ROOT — do not commit)
+notifier/static/
+
 # Flask stuff:
 instance/
 .webassets-cache
@@ -119,7 +122,9 @@ venv.bak/
 
 # mkdocs documentation
 /site
-/static
+
+# Media uploads (if used under app paths)
+*/media/*
 
 # mypy
 .mypy_cache/
@@ -128,4 +133,15 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# VS Code
+.vscode/
+.vscode/*
+
+# Cursor
+.cursor/
+.cursorrules
+
+# Local docs
+architecture.md
 

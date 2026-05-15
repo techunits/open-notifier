@@ -61,14 +61,10 @@ def send(notification_id):
     except Exception as e:
         traceback.print_exc()
         logger.error(e)
-        response = {
-            "error": str(e)
-        }
+        response = {"error": str(e)}
         status = "FAILED"
 
     notification_obj.status = status
-    notification_obj.metadata.update({
-        "response": response
-    })
+    notification_obj.metadata.update({"response": response})
     logger.info(f"{config_obj} Status({notification_id}): " + notification_obj.status)
     notification_obj.save()

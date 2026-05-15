@@ -28,7 +28,7 @@ class NotificationView(NotificationURLValidatorView):
                 "notification_type": payload.get("notification_type", None),
             },
         )
-        validator.validate(required_fields=["template_ref"])
+        validator.validate(required_fields=["template_ref", "to"])
 
         notifications = []
         for validated_template in validator.templates:
