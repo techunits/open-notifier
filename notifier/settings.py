@@ -10,78 +10,120 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
-import os
 from pathlib import Path
+import os
+import sys
+
+# load ENV vars
+from dotenv import load_dotenv
+
+load_dotenv()
+
+APP_ENV = os.environ.get("APP_ENV", None)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure--v02wa5k*bvm__!jfst4&8=_z!dp5)o&!x)-rzz^exewwvl9sk'
+SECRET_KEY = "django-insecure--v02wa5k*bvm__!jfst4&8=_z!dp5)o&!x)-rzz^exewwvl9sk"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# setup logging
+import logging.config
 
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {"trace_id": {"()": "notifier.middlewares.tracer.TraceIdFilter"}},
+    "formatters": {
+        "console": {
+            "format": "%(levelname)-1s: %(asctime)s [trace_id=%(trace_id)s] [%(name)-12s.%(funcName)s] %(message)s",
+        },
+    },
+    "handlers": {
+        "console": {
+            "level": "INFO" if APP_ENV == "PRODUCTION" else "DEBUG",
+            "filters": ["trace_id"],
+            "class": "logging.StreamHandler",
+            "formatter": "console",
+            "stream": sys.stdout,
+        }
+    },
+    "loggers": {
+        "": {
+            "handlers": ["console"],
+            "level": "INFO" if APP_ENV == "PRODUCTION" else "DEBUG",
+            "propagate": True,
+        }
+    },
+}
+logging.config.dictConfig(LOGGING)
+LOGGER = logging.getLogger(__name__)
+
+ALLOWED_HOSTS = ["*"]
 
 # Application definition
-
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'rest_framework',
-
-    'templates',
-    'notifications'
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "rest_framework",
+    "django_grpc",
+    "tenants",
+    "templates",
+    "notifications",
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "notifier.middlewares.tracer.TracerMiddleware",
 ]
 
-ROOT_URLCONF = 'notifier.urls'
+ROOT_URLCONF = "notifier.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'notifier.wsgi.application'
+WSGI_APPLICATION = "notifier.wsgi.application"
 
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
-
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    "default": {
+        "ENGINE": "django.db.backends.postgresql_psycopg2",
+        "NAME": os.environ.get("DATABASE_NAME", "open_notifier"),
+        "USER": os.environ.get("DATABASE_USER", "postgres"),
+        "PASSWORD": os.environ.get("DATABASE_PASSWORD", "postgres"),
+        "HOST": os.environ.get("DATABASE_HOST", "localhost"),
+        "PORT": os.environ.get("DATABASE_PORT", 5432),
     }
 }
 
@@ -91,16 +133,16 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
@@ -108,9 +150,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
@@ -120,23 +162,35 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = "notifier/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "notifier", "static")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
+    "DEFAULT_AUTHENTICATION_CLASSES": [
         # 'rest_framework_simplejwt.authentication.JWTAuthentication'
     ],
 }
 
+# gRPC server config
+GRPCSERVER = {
+    "servicers": ["notifier.grpc.hooks.connector_hook"],
+    "maximum_concurrent_rpcs": None,
+    "options": [("grpc.max_receive_message_length", 1024 * 1024 * 100)],
+    # 'credentials': [{
+    #     'private_key': 'private_key.pem',
+    #     'certificate_chain': 'certificate_chain.pem'
+    # }]    # required only if SSL/TLS support is required to be enabled
+}
+
 # configure CELERY
 REDIS_HOST = os.environ.get("REDIS_HOST", "localhost")
-REDIS_PORT = int(os.environ.get("REDIS_PORT", 6379))
+REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
 REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", None)
 REDIS_CELERY_DB = 0
 if REDIS_PASSWORD is None:
@@ -144,9 +198,12 @@ if REDIS_PASSWORD is None:
 else:
     BROKER_URL = f"rediss://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_CELERY_DB}?ssl_cert_reqs=required"
 
-CELERY_ACCEPT_CONTENT = ['application/json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+CELERY_ACCEPT_CONTENT = ["application/json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 CELERY_ALWAYS_EAGER = True
 CELERY_RESULT_BACKEND = BROKER_URL
+
+
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

@@ -1,0 +1,25 @@
+[
+    {
+        "model": "notifications.configuration",
+        "pk": "0402134f-39b3-49ed-8270-2e07b87fee42",
+        "fields": {
+            "tenant_id": "2714ebed-98b4-43d6-a3bb-698294493c8c",
+            "notification_type": "EMAIL",
+            "provider": "LOCAL_EMAIL",
+            "metadata": {
+                "smtp_host": "smtp.example.com",
+                "smtp_port": 25,
+                "smtp_username": "webmaster@example.com",
+                "smtp_password": "***************",
+                "smtp_tls": true,
+                "smtp_from_email": "webmaster@example.com"
+            },
+            "is_enabled": true,
+            "is_deleted": false,
+            "created_on": 1665048975.596836,
+            "modified_on": 1665121045.019223,
+            "created_by": "d842af10-9b95-43ab-bf41-97651b5e437e",
+            "modified_by": "d842af10-9b95-43ab-bf41-97651b5e437e"
+        }
+    }
+]

@@ -1,0 +1,18 @@
+syntax = "proto3";
+package GenericConnector;
+
+message GenericRequest {
+    string request_method = 1;
+    string endpoint = 2;
+    string payload = 3;
+    string headers = 4;
+}
+
+message GenericResponse {
+    int32 status_code = 1;
+    string data = 2;
+}
+
+service Connector {
+    rpc getResponse(GenericRequest) returns (GenericResponse) {}
+}

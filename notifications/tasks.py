@@ -1,20 +1,41 @@
-import traceback
-from django.conf import settings
 from celery import shared_task
-from django.core.mail import (
-    BadHeaderError, 
-    EmailMultiAlternatives
-)
+from notifications.models import NotificationLog
+from django.conf import settings
+import os
+import importlib
+from notifications.integrations import *
+
+logger = settings.LOGGER
+
 
 @shared_task
-def send_email_notification(subject, body, to=[]):
-    from_email = settings.SMTP_DEFAULT_FROM_EMAIL
+def send_notification(notification_id):
+    # pull up notification details
     try:
-        msg = EmailMultiAlternatives(subject=subject, body=body, from_email=from_email, to=to)
-        msg.attach_alternative(body, "text/html")
-        resp = msg.send(fail_silently = False)
-        print('email sent successfully: ', resp)
-    except BadHeaderError as e:
-        traceback.print_exc()
-        print('email sending failed: ', e)
+        notification_obj = NotificationLog.objects.get(id=notification_id)
+    except Exception as e:
+        logger.error(f"Invalid notification id: {notification_id}")
 
+    integration_path = os.path.join(
+        settings.BASE_DIR,
+        "notifications",
+        "integrations",
+        notification_obj.notification_ref.provider.lower(),
+        f"sender.py",
+    )
+    if os.path.exists(integration_path):
+        logger.info(
+            f"{notification_obj.notification_ref.notification_type} integration found({notification_id}): {notification_obj.notification_ref.provider}"
+        )
+        module_name = f"notifications.integrations.{notification_obj.notification_ref.provider.lower()}.sender"
+        logger.info(f"Importing module: {module_name}")
+        integration_module = importlib.import_module(module_name)
+        integration_func = getattr(integration_module, "send")
+        logger.info(
+            f"Scheduling {notification_obj.notification_ref.notification_type} task({notification_id}): {notification_obj.notification_ref}"
+        )
+        integration_func.delay(notification_id)
+    else:
+        logger.error(
+            f"{notification_obj.notification_ref.notification_type} integration not found({notification_id}): {notification_obj.notification_ref.provider}"
+        )

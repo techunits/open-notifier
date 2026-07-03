@@ -7,7 +7,7 @@ networks:
 
 services:
   open-notifier-db:
-    image: postgres:14
+    image: postgres:15
     container_name: open-notifier-db
     restart: always
     networks:
@@ -33,7 +33,21 @@ services:
     environment:
       - APP_TYPE=service
     ports:
-      - 8050:8050
+      - 8050:8000
+    depends_on:
+      - "open-notifier-db"
+      - "open-notifier-redis"
+    
+  open-notifier-grpc:
+    build:
+      context: ./
+    container_name: open-notifier-grpc
+    networks:
+      - open-notifier-network
+    environment:
+      - APP_TYPE=grpc
+    ports:
+      - 58051:50051
     depends_on:
       - "open-notifier-db"
       - "open-notifier-redis"
@@ -46,6 +60,20 @@ services:
       - open-notifier-network
     environment:
       - APP_TYPE=celery
+    depends_on:
+      - "open-notifier-db"
+      - "open-notifier-redis"
+
+  open-notifier-socketio:
+    build:
+      context: ./
+    container_name: open-notifier-socketio
+    networks:
+      - open-notifier-network
+    ports:
+      - 8151:3000
+    environment:
+      - APP_TYPE=socketio
     depends_on:
       - "open-notifier-db"
       - "open-notifier-redis"

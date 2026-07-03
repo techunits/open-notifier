@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+    <head>
+        <meta charset="utf-8" />
+        <title>SocketIO Test</title>
+        <script src="https://code.jquery.com/jquery-3.6.4.min.js" integrity="sha256-oP6HI9z1XaZNBrJURtCoUT5SUnxFr8s3BzRl+cbzUq8=" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.js" integrity="sha512-xbQU0+iHqhVt7VIXi6vBJKPh3IQBF5B84sSHdjKiSccyX/1ZI7Vnkt2/8y8uruj63/DVmCxfUNohPNruthTEQA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <script type="text/javascript">
+            const logDomRef = '#sio-logs';
+            $(document).ready(function() {
+                const sio = io();
+                $(logDomRef).append('<p>Opening socket connection...!</p>');
+
+                sio.on('connect', (socket) => {
+                    $(logDomRef).append('<p>CONNECTED!</p>');
+                    
+                    $(logDomRef).append('<p>Sending PING...</p>');
+                    sio.emit('PING', {
+                        'message': 'This is a test ping!!!'
+                    });
+                });
+
+                sio.on('PONG', (message) => {
+                    $(logDomRef).append(`<p>Received PONG: ${JSON.stringify(message)}</p>`);
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <div id="sio-logs"></div>
+    </body>
+</html>

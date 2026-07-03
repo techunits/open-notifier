@@ -1,5 +1,5 @@
 # Use the official Python image from the Docker Hub
-FROM python:3.9-slim-bullseye
+FROM python:3.10-slim-bullseye
 
 RUN apt-get update && apt-get upgrade -y && apt-get install -y python3-dev gcc libev-dev libpq-dev
 
@@ -25,5 +25,4 @@ RUN chmod +x bootstrap.sh
 ENTRYPOINT ["/service/bootstrap.sh"]
 
 # exposing port
-EXPOSE 8050
-
+EXPOSE 8000 3000 50051
