@@ -15,6 +15,9 @@ class TemplateView(NotificationURLValidatorView):
         # request param validation
         self.validate_request_params(tenant_id=tenant_id)
 
+        # authenticate the tenant's API key (Authorization header, no Bearer)
+        self.authenticate_tenant_api_key()
+
         templates = Template.objects.filter(
             tenant=self.tenant
         )

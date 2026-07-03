@@ -1,81 +1,81 @@
 networks:
-  open-notifier-network:
-    name: open-notifier-network
+  enotifier-network:
+    name: enotifier-network
     driver: bridge
 
 services:
-  open-notifier-db:
-    image: postgres:15
-    container_name: open-notifier-db
+  enotifier-db:
+    image: postgres:17
+    container_name: enotifier-db
     restart: always
     networks:
-      - open-notifier-network
+      - enotifier-network
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=open_notifier
+      - POSTGRES_DB=enotifier
   
-  open-notifier-redis:
+  enotifier-redis:
     image: redis:latest
-    container_name: open-notifier-redis
+    container_name: enotifier-redis
     networks:
-      - open-notifier-network
+      - enotifier-network
     restart: always
   
-  open-notifier-service:
+  enotifier-service:
     build:
       context: ./
-    container_name: open-notifier-service
+    container_name: enotifier-service
     networks:
-      - open-notifier-network
+      - enotifier-network
     environment:
       - APP_TYPE=service
     ports:
-      - 8050:8000
+      - 8050:8050
     depends_on:
-      - "open-notifier-db"
-      - "open-notifier-redis"
+      - "enotifier-db"
+      - "enotifier-redis"
     restart: always
     
-  open-notifier-grpc:
+  enotifier-grpc:
     build:
       context: ./
-    container_name: open-notifier-grpc
+    container_name: enotifier-grpc
     networks:
-      - open-notifier-network
+      - enotifier-network
     environment:
       - APP_TYPE=grpc
     ports:
       - 50080:50080
     depends_on:
-      - "open-notifier-db"
-      - "open-notifier-redis"
+      - "enotifier-db"
+      - "enotifier-redis"
     restart: always
 
-  open-notifier-celery:
+  enotifier-celery:
     build:
       context: ./
-    container_name: open-notifier-celery
+    container_name: enotifier-celery
     networks:
-      - open-notifier-network
+      - enotifier-network
     environment:
       - APP_TYPE=celery
     depends_on:
-      - "open-notifier-db"
-      - "open-notifier-redis"
+      - "enotifier-db"
+      - "enotifier-redis"
     restart: always
 
-  open-notifier-socketio:
+  enotifier-socketio:
     build:
       context: ./
-    container_name: open-notifier-socketio
+    container_name: enotifier-socketio
     networks:
-      - open-notifier-network
+      - enotifier-network
     ports:
       - 8151:8151
     environment:
       - APP_TYPE=socketio
     depends_on:
-      - "open-notifier-db"
-      - "open-notifier-redis"
+      - "enotifier-db"
+      - "enotifier-redis"
     restart: always

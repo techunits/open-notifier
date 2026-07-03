@@ -1,7 +1,8 @@
+from django.utils import timezone
 from rest_framework import status
 from notifier.validators.errors import ErrorResponseException
 from notifier.validators import URLValidatorView, PayloadValidator
-from tenants.models import Tenant
+from tenants.models import Tenant, TenantApiKey
 from templates.models import Template
 
 
@@ -22,6 +23,47 @@ class NotificationURLValidatorView(URLValidatorView):
                 "Invalid tenant ID supplied",
                 status.HTTP_404_NOT_FOUND,
             )
+
+    def authenticate_tenant_api_key(self):
+        """Authenticate the client request with the tenant's API key.
+
+        The raw key is sent verbatim in the ``Authorization`` header (no
+        ``Bearer`` prefix). We hash it (SHA3-512) and match it to an active,
+        unexpired key belonging to the tenant resolved from the URL.
+
+        Requires ``self.tenant`` to be set first (call after
+        ``validate_request_params(tenant_id=...)``).
+        """
+        raw_key = (self.request.headers.get("Authorization") or "").strip()
+        if not raw_key:
+            raise ErrorResponseException(
+                "MISSING_API_KEY",
+                "An API key is required in the Authorization header",
+                status.HTTP_401_UNAUTHORIZED,
+            )
+
+        api_key = TenantApiKey.objects.filter(
+            key_hash=TenantApiKey.hash_key(raw_key), is_deleted=False
+        ).first()
+        if api_key is None or not api_key.is_active:
+            raise ErrorResponseException(
+                "INVALID_API_KEY", "Invalid API key", status.HTTP_401_UNAUTHORIZED
+            )
+        if api_key.is_expired:
+            raise ErrorResponseException(
+                "EXPIRED_API_KEY", "API key has expired", status.HTTP_401_UNAUTHORIZED
+            )
+        if self.tenant is not None and api_key.tenant_id != self.tenant.id:
+            raise ErrorResponseException(
+                "API_KEY_TENANT_MISMATCH",
+                "API key is not valid for this tenant",
+                status.HTTP_403_FORBIDDEN,
+            )
+
+        self.api_key = api_key
+        # Record usage without churning modified_on.
+        TenantApiKey.objects.filter(pk=api_key.pk).update(last_used_on=timezone.now())
+        return api_key
 
 
 class NotificationPayloadValidator(PayloadValidator):

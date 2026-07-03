@@ -1,0 +1,169 @@
+{% extends "en_console/base.html" %}
+{% block title %}API Keys &middot; eNotifier{% endblock %}
+{% block heading %}API Keys{% endblock %}
+{% block content %}
+<div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+  <p class="text-sm text-slate-500">Per-tenant keys for the client API. Send the key verbatim in the <code class="rounded bg-slate-100 px-1 py-0.5 text-xs">Authorization</code> header (no <code class="rounded bg-slate-100 px-1 py-0.5 text-xs">Bearer</code> prefix).</p>
+  <div class="flex items-center gap-2">
+    <select id="tenantFilter" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"><option value="">All tenants</option></select>
+    <button id="addBtn" class="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-brand-600/25 transition hover:bg-brand-700"><svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New API Key</button>
+  </div>
+</div>
+<div class="md:overflow-x-auto md:rounded-2xl md:border md:border-slate-200 md:bg-white md:shadow-card">
+  <table class="min-w-full text-sm responsive-cards">
+    <thead class="border-b border-slate-200 bg-slate-50/70 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+      <tr><th class="px-4 py-3">Label</th><th class="px-4 py-3">Tenant</th><th class="px-4 py-3">Key</th><th class="px-4 py-3">Expires</th><th class="px-4 py-3">Status</th><th class="px-4 py-3">Last used</th><th class="px-4 py-3 text-right">Actions</th></tr>
+    </thead>
+    <tbody id="rows"><tr><td colspan="7" class="px-4 py-6 text-center text-slate-400">Loading…</td></tr></tbody>
+  </table>
+</div>
+
+<!-- One-time reveal overlay (kept separate from the shared modal so closing it
+     always routes through the safety confirmation). -->
+<div id="akReveal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-slate-900/70 p-4 backdrop-blur-sm">
+  <div class="w-full max-w-lg rounded-2xl bg-white shadow-pop ring-1 ring-slate-200">
+    <div class="border-b border-slate-100 px-6 py-4">
+      <h3 class="text-lg font-semibold tracking-tight text-slate-900">API key created</h3>
+    </div>
+    <div class="px-6 py-5">
+      <div class="mb-4 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2.5 text-xs text-amber-800 ring-1 ring-inset ring-amber-500/30">
+        <svg class="mt-0.5 h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+        <span><b>Copy this key now.</b> For your security it is stored only as a hash and <b>cannot be shown again</b>. Afterwards it is identified only by its last 6 characters.</span>
+      </div>
+      <label class="mb-1.5 block text-sm font-medium text-slate-700">Your API key</label>
+      <div class="flex items-stretch gap-2">
+        <code id="akKey" class="flex-1 select-all break-all rounded-lg bg-slate-900 px-3 py-2.5 font-mono text-xs text-slate-100"></code>
+        <button id="akCopy" class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy
+        </button>
+      </div>
+    </div>
+    <div class="flex justify-end gap-2 border-t border-slate-100 bg-slate-50/60 px-6 py-4">
+      <button id="akDone" class="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-brand-600/25 transition hover:bg-brand-700">Done</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+let TENANTS = [], EXPIRY_OPTS = [];
+
+function fmtDate(v) { if (!v) return '—'; const d = new Date(v); return isNaN(d) ? v : d.toLocaleDateString(); }
+function fmtDateTime(v) { if (!v) return '—'; const d = new Date(v); return isNaN(d) ? v : d.toLocaleString(); }
+
+function statusBadgeAk(k) {
+  let cls, txt;
+  if (!k.is_active) { cls = 'bg-rose-50 text-rose-700 ring-rose-600/20'; txt = 'Revoked'; }
+  else if (k.is_expired) { cls = 'bg-amber-50 text-amber-700 ring-amber-600/20'; txt = 'Expired'; }
+  else { cls = 'bg-emerald-50 text-emerald-700 ring-emerald-600/20'; txt = 'Active'; }
+  return '<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ' + cls + '">' + txt + '</span>';
+}
+
+function load() {
+  const tf = $('#tenantFilter').val();
+  api.list('apikeys/', tf ? { tenant: tf } : {}).done(function (items) {
+    if (!items.length) { $('#rows').html('<tr><td colspan="7" class="px-4 py-6 text-center text-slate-400">No API keys.</td></tr>'); return; }
+    $('#rows').html(items.map(k =>
+      '<tr class="border-t">' +
+      '<td data-label="Label" class="px-4 py-3 font-medium">' + escapeHtml(k.label) + '</td>' +
+      '<td data-label="Tenant" class="px-4 py-3">' + escapeHtml(k.tenant_name || '—') + '</td>' +
+      '<td data-label="Key" class="px-4 py-3"><span class="font-mono text-xs text-slate-500">…' + escapeHtml(k.last_six) + '</span></td>' +
+      '<td data-label="Expires" class="px-4 py-3 text-slate-500">' + (k.expires_on ? fmtDate(k.expires_on) : 'Never') + '</td>' +
+      '<td data-label="Status" class="px-4 py-3">' + statusBadgeAk(k) + '</td>' +
+      '<td data-label="Last used" class="px-4 py-3 text-slate-500">' + fmtDateTime(k.last_used_on) + '</td>' +
+      '<td data-label="" class="px-4 py-3 text-right">' + kebabMenu(
+        menuItem('data-edit=\'' + escapeHtml(JSON.stringify(k)) + '\'', 'pencil', 'Edit') +
+        (k.is_active ? menuItem('data-revoke="' + k.id + '" data-name="' + escapeHtml(k.label) + '"', 'trash', 'Revoke', true) : '')
+      ) + '</td></tr>').join(''));
+  }).fail(apiError);
+}
+
+function newFormHtml() {
+  const expOpts = EXPIRY_OPTS.map(o => ({ value: o.value === null ? '' : o.value, label: o.label }));
+  return field('Tenant', 'tenant', '', { type: 'select', options: TENANTS.map(t => ({ value: t.id, label: t.name })) }) +
+         field('Label', 'label', '', { required: true, placeholder: 'e.g. production server' }) +
+         field('Expires', 'expires_in_days', 90, { type: 'select', options: expOpts });
+}
+
+// ---- one-time reveal overlay ----
+function showReveal(rawKey) {
+  $('#akKey').text(rawKey);
+  $('#akReveal').removeClass('hidden').addClass('flex');
+}
+function closeReveal() {
+  // Warn before navigating away so the user confirms they've stored the key.
+  confirmDialog(
+    'Have you copied and safely stored your API key? It cannot be shown again.',
+    function () {
+      $('#akReveal').addClass('hidden').removeClass('flex');
+      $('#akKey').text('');
+      load();
+    },
+    { title: 'Before you close', confirmText: "Yes, I've saved it", cancelText: 'Not yet' }
+  );
+}
+function selectText(el) {
+  if (!el) return;
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+$('#akDone').on('click', closeReveal);
+$('#akCopy').on('click', function () {
+  const text = $('#akKey').text();
+  const fallback = function () {
+    selectText(document.getElementById('akKey'));
+    toast('Select the highlighted key and press Ctrl/Cmd + C to copy', 'info');
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function () { toast('API key copied to clipboard', 'success'); }).catch(fallback);
+  } else {
+    fallback();
+  }
+});
+
+$('#addBtn').on('click', function () {
+  if (!TENANTS.length) { toast('No tenant available to create a key for.', 'error'); return; }
+  Modal.open('New API Key', newFormHtml(), function () {
+    const base = readForm($('#modalBody'));
+    if (!base.label) { toast('A label is required.', 'error'); return; }
+    const data = { tenant: base.tenant, label: base.label };
+    if (base.expires_in_days !== '') data.expires_in_days = Number(base.expires_in_days);
+    Modal.busy(true);
+    api.create('apikeys/', data).done(function (created) {
+      Modal.close();
+      showReveal(created.api_key);
+    }).fail(apiError).always(function () { Modal.busy(false); });
+  });
+});
+
+$('#rows').on('click', '[data-edit]', function () {
+  const k = JSON.parse($(this).attr('data-edit'));
+  Modal.open('Edit API Key', field('Label', 'label', k.label || '', { required: true }), function () {
+    const label = (readForm($('#modalBody')).label || '').trim();
+    if (!label) { toast('A label is required.', 'error'); return; }
+    Modal.busy(true);
+    api.update('apikeys/' + k.id + '/', { label: label }).done(function () { Modal.close(); toast('Label updated', 'success'); load(); })
+      .fail(apiError).always(function () { Modal.busy(false); });
+  });
+});
+
+$('#rows').on('click', '[data-revoke]', function () {
+  const id = $(this).attr('data-revoke'), name = $(this).attr('data-name');
+  confirmDelete('Revoke API key "' + name + '"? Any client using it will immediately lose access.', function () {
+    api.remove('apikeys/' + id + '/').done(function () { Modal.close(); toast('API key revoked', 'success'); load(); }).fail(apiError);
+  });
+});
+
+$('#tenantFilter').on('change', load);
+
+$.when(api.get('meta/'), api.list('tenants/')).done(function (m, t) {
+  EXPIRY_OPTS = (m[0] && m[0].api_key_expiry_options) || [];
+  TENANTS = t[0] || [];
+  $('#tenantFilter').append(TENANTS.map(x => '<option value="' + escapeHtml(x.id) + '">' + escapeHtml(x.name) + '</option>').join(''));
+  load();
+}).fail(apiError);
+</script>
+{% endblock %}

@@ -1,0 +1,241 @@
+{% extends "en_console/base.html" %}
+{% block title %}{% if template_id %}Edit Template{% else %}New Template{% endif %} &middot; eNotifier{% endblock %}
+{% block heading %}{% if template_id %}Edit Template{% else %}New Template{% endif %}{% endblock %}
+{% block content %}
+<div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+  <p class="text-sm text-slate-500">Author your template with the visual editor, HTML source and live preview.</p>
+  <div class="flex items-center gap-2">
+    <a href="{% url 'en_console:templates' %}" class="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200"><svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>Cancel</a>
+    <button id="saveTpl" class="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-brand-600/25 transition hover:bg-brand-700"><svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Save</button>
+  </div>
+</div>
+
+<div class="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card lg:flex-row" style="height: calc(100vh - 12rem); min-height: 480px;">
+  <!-- Metadata -->
+  <aside class="w-full overflow-y-auto border-b bg-white p-4 lg:w-80 lg:border-b-0 lg:border-r">
+    <div id="metaForm"></div>
+    <div class="mb-4">
+      <div class="mb-1 flex items-center justify-between">
+        <label class="text-sm font-medium text-slate-700">Sample data (JSON)</label>
+        <button id="detectVars" class="text-xs font-medium text-brand hover:underline">Detect variables</button>
+      </div>
+      <textarea id="sampleData" rows="6" class="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs">{}</textarea>
+      <p class="mt-1 text-xs text-slate-400">Used for live preview. Uses Django template syntax, e.g. {% verbatim %}{{ name }}{% endverbatim %}.</p>
+    </div>
+  </aside>
+
+  <!-- Editor surface -->
+  <section class="flex flex-1 min-h-0 flex-col">
+    <div class="flex flex-wrap items-center gap-2 border-b bg-white px-3 py-2">
+      <div class="inline-flex rounded-lg bg-slate-100 p-0.5 text-sm">
+        <button class="tab rounded-md px-3 py-1 font-medium" data-tab="visual">Visual</button>
+        <button class="tab rounded-md px-3 py-1 font-medium" data-tab="code">HTML</button>
+        <button class="tab rounded-md px-3 py-1 font-medium" data-tab="preview">Preview</button>
+      </div>
+      <span class="mx-1 h-5 w-px bg-slate-200"></span>
+      <input id="varInput" placeholder="variable name" class="w-36 rounded border border-slate-300 px-2 py-1 text-xs">
+      <button id="insertVar" class="inline-flex items-center gap-1 rounded bg-slate-800 px-2 py-1 text-xs font-medium text-white hover:bg-slate-700">Insert {% verbatim %}{{ }}{% endverbatim %}</button>
+    </div>
+    <div class="relative flex-1 min-h-0 bg-white">
+      <div id="visualWrap" class="absolute inset-0 overflow-hidden"><textarea id="rte"></textarea></div>
+      <div id="codeWrap" class="absolute inset-0 hidden"><textarea id="code"></textarea></div>
+      <div id="previewWrap" class="absolute inset-0 hidden flex-col">
+        <div id="previewSubject" class="border-b bg-slate-50 px-4 py-2 text-sm"></div>
+        <iframe id="preview" class="flex-1 w-full"></iframe>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}
+<!-- Modern editor libraries (self-hosted GPL TinyMCE + CodeMirror), loaded from CDN -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/theme/material-darker.min.css">
+<script src="https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js" referrerpolicy="origin"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/mode/xml/xml.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/mode/javascript/javascript.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/mode/css/css.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/addon/edit/closebrackets.min.js"></script>
+<style>
+  #codeWrap .CodeMirror { height: 100%; font-size: 12.5px; }
+  #visualWrap .tox-tinymce { height: 100% !important; border: 0; }
+</style>
+<script>
+const TEMPLATE_ID = "{{ template_id }}";
+const LIST_URL = "{% url 'en_console:templates' %}";
+let META = {}, TENANTS = [];
+let tinyEditor = null, cm = null, editorsReady = false, isFullDoc = false, headHtml = '', activeTab = 'visual';
+
+function metaFormHtml(t) {
+  t = t || {};
+  // Design admins may only manage EMAIL templates, so they only see EMAIL.
+  const availableTypes = WC.role === 'DESIGN_ADMIN' ? ['EMAIL'] : META.notification_types;
+  const types = availableTypes.map(function (nt) {
+    const defaults = WC.role === 'DESIGN_ADMIN' ? ['EMAIL'] : (t.notification_types || ['EMAIL']);
+    const checked = defaults.indexOf(nt) !== -1 ? 'checked' : '';
+    return '<label class="mr-3 inline-flex items-center gap-1 text-sm"><input type="checkbox" class="ntype rounded border-slate-300 text-brand" value="' + nt + '" ' + checked + '>' + nt + '</label>';
+  }).join('');
+  return field('Name', 'name', t.name || '', { required: true }) +
+         field('Reference key', 'ref', t.ref || '', { required: true, placeholder: 'WELCOME_EMAIL' }) +
+         field('Tenant', 'tenant', t.tenant || '', { type: 'select', options: TENANTS.map(x => ({ value: x.id, label: x.name })) }) +
+         '<div class="mb-4"><label class="mb-1 block text-sm font-medium text-slate-700">Notification types</label>' + types + '</div>' +
+         field('Subject', 'subject', t.subject || '', { placeholder: 'Welcome {% verbatim %}{{ name }}{% endverbatim %}' }) +
+         field('Addon data (JSON)', 'addon_data', t.addon_data ? JSON.stringify(t.addon_data, null, 2) : '', { type: 'textarea', rows: 3 }) +
+         field('Enabled', 'is_enabled', t.id ? t.is_enabled : true, { type: 'checkbox' });
+}
+
+// Initialise TinyMCE (Visual) + CodeMirror (HTML) once.
+function ensureEditors() {
+  if (editorsReady) return Promise.resolve();
+  const isDark = document.documentElement.classList.contains('dark');
+  cm = CodeMirror.fromTextArea(document.getElementById('code'), {
+    mode: 'htmlmixed', lineNumbers: true, lineWrapping: true, tabSize: 2,
+    autoCloseBrackets: true, matchBrackets: true,
+    theme: isDark ? 'material-darker' : 'default'
+  });
+  return tinymce.init({
+    target: document.getElementById('rte'),
+    height: '100%', menubar: false, branding: false, promotion: false,
+    license_key: 'gpl', convert_urls: false,
+    plugins: 'advlist lists link image table code preview autolink hr searchreplace visualblocks charmap fullscreen',
+    toolbar: 'undo redo | blocks fontfamily fontsizeinput | bold italic underline strikethrough forecolor backcolor | ' +
+             'alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image table hr | removeformat | code preview fullscreen',
+    content_style: 'body{font-family:Inter,system-ui,sans-serif;font-size:14px;line-height:1.5}',
+    skin: isDark ? 'oxide-dark' : 'oxide',
+    content_css: isDark ? 'dark' : 'default'
+  }).then(function (eds) { tinyEditor = eds[0]; editorsReady = true; });
+}
+
+// Split a stored body into an editable body fragment + surrounding document
+// shell, so a full HTML email (with <head>/styles) survives the visual edit.
+function parseDoc(html) {
+  html = html || '';
+  const isFull = /<html[\s>]/i.test(html) || /<body[\s>]/i.test(html) || /<head[\s>]/i.test(html);
+  if (!isFull) return { isFull: false, head: '', bodyInner: html };
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  return { isFull: true, head: doc.head ? doc.head.innerHTML : '', bodyInner: doc.body ? doc.body.innerHTML : '' };
+}
+function tinyToCanonical() {
+  const bodyInner = tinyEditor ? tinyEditor.getContent() : '';
+  if (!isFullDoc) return bodyInner;
+  return '<!doctype html>\n<html>\n<head>\n' + headHtml + '\n</head>\n<body>\n' + bodyInner + '\n</body>\n</html>';
+}
+function loadVisualFromCode() {
+  const p = parseDoc(cm.getValue());
+  isFullDoc = p.isFull; headHtml = p.head;
+  if (tinyEditor) tinyEditor.setContent(p.bodyInner);
+}
+function currentBody() {
+  if (activeTab === 'code') return cm ? cm.getValue() : '';
+  if (activeTab === 'visual') return tinyToCanonical();
+  return cm ? cm.getValue() : '';
+}
+
+function showTab(tab) {
+  activeTab = tab;
+  $('.tab').removeClass('bg-white shadow text-brand').addClass('text-slate-500');
+  $('.tab[data-tab="' + tab + '"]').addClass('bg-white shadow text-brand').removeClass('text-slate-500');
+  $('#visualWrap').toggleClass('hidden', tab !== 'visual');
+  $('#codeWrap').toggleClass('hidden', tab !== 'code');
+  $('#previewWrap').toggleClass('hidden', tab !== 'preview').toggleClass('flex', tab === 'preview');
+  if (tab === 'code' && cm) setTimeout(function () { cm.refresh(); }, 10);
+  if (tab === 'preview') runPreview();
+}
+function switchTab(tab) {
+  if (tab !== activeTab) {
+    if (activeTab === 'visual') cm.setValue(tinyToCanonical());
+    if (tab === 'visual') loadVisualFromCode();
+  }
+  showTab(tab);
+}
+
+function runPreview() {
+  let payload = {};
+  try { payload = JSON.parse($('#sampleData').val() || '{}'); }
+  catch (e) { toast('Sample data is not valid JSON.', 'error'); }
+  const body = currentBody();
+  const subject = $('#metaForm [name="subject"]').val() || '';
+  api.create('templates/preview/', { body: body, subject: subject, payload: payload }).done(function (r) {
+    $('#previewSubject').html('<b>Subject:</b> ' + escapeHtml(r.subject));
+    document.getElementById('preview').srcdoc = r.body;
+  }).fail(apiError);
+}
+
+function initEditor(t) {
+  $('#metaForm').html(metaFormHtml(t));
+  $('#sampleData').val('{}');
+  ensureEditors().then(function () {
+    cm.setValue(t ? (t.body || '') : '<p>Start writing your email…</p>');
+    loadVisualFromCode();
+    showTab('visual');
+    setTimeout(function () { cm.refresh(); }, 30);
+  });
+}
+
+function readEditor() {
+  const m = $('#metaForm');
+  const types = m.find('.ntype:checked').map(function () { return this.value; }).get();
+  let addon = null;
+  const addonRaw = m.find('[name="addon_data"]').val().trim();
+  if (addonRaw) { try { addon = JSON.parse(addonRaw); } catch (e) { throw 'Addon data is not valid JSON.'; } }
+  return {
+    tenant: m.find('[name="tenant"]').val(),
+    name: m.find('[name="name"]').val(),
+    ref: m.find('[name="ref"]').val(),
+    subject: m.find('[name="subject"]').val(),
+    notification_types: types,
+    addon_data: addon,
+    is_enabled: m.find('[name="is_enabled"]').is(':checked'),
+    body: currentBody()
+  };
+}
+
+function insertSnippet(text) {
+  if (activeTab === 'visual' && tinyEditor) tinyEditor.insertContent(text);
+  else if (activeTab === 'code' && cm) { cm.replaceSelection(text); cm.focus(); }
+  else toast('Switch to the Visual or HTML tab to insert.', 'info');
+}
+$('#insertVar').on('click', function () {
+  const name = ($('#varInput').val() || '').trim();
+  if (!name) { toast('Enter a variable name first.', 'error'); return; }
+  insertSnippet('{{ ' + name + ' }}');
+  $('#varInput').val('');
+});
+
+$('#detectVars').on('click', function () {
+  const body = currentBody();
+  const subject = $('#metaForm [name="subject"]').val() || '';
+  const re = /\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}\}/g;
+  const sample = {}; let m;
+  while ((m = re.exec(body + ' ' + subject)) !== null) sample[m[1]] = sample[m[1]] || ('Sample ' + m[1]);
+  $('#sampleData').val(JSON.stringify(sample, null, 2));
+  toast(Object.keys(sample).length + ' variable(s) detected.', 'success');
+});
+
+$('.tab').on('click', function () { switchTab($(this).data('tab')); });
+
+$('#saveTpl').on('click', function () {
+  let data; try { data = readEditor(); } catch (e) { toast(e, 'error'); return; }
+  if (!data.tenant) { toast('Select a tenant.', 'error'); return; }
+  if (!data.notification_types.length) { toast('Pick at least one notification type.', 'error'); return; }
+  $('#saveTpl').prop('disabled', true).html(icon('spinner', 'h-4 w-4 animate-spin') + 'Saving…');
+  const req = TEMPLATE_ID ? api.update('templates/' + TEMPLATE_ID + '/', data) : api.create('templates/', data);
+  req.done(function () { window.location = LIST_URL + '?saved=1'; })
+     .fail(function (xhr) { apiError(xhr); $('#saveTpl').prop('disabled', false).html(icon('check', 'h-4 w-4') + 'Save'); });
+});
+
+// Bootstrap reference data, then load the template (edit) or start blank (new).
+$.when(api.get('meta/'), api.list('tenants/')).done(function (m, t) {
+  META = m[0]; TENANTS = t[0] || [];
+  if (!TENANTS.length && !TEMPLATE_ID) toast('No tenant available — create a tenant first.', 'error');
+  if (TEMPLATE_ID) {
+    api.get('templates/' + TEMPLATE_ID + '/').done(initEditor).fail(apiError);
+  } else {
+    initEditor(null);
+  }
+}).fail(apiError);
+</script>
+{% endblock %}

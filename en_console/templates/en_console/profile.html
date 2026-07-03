@@ -1,0 +1,92 @@
+{% extends "en_console/base.html" %}
+{% block title %}My Profile &middot; eNotifier{% endblock %}
+{% block heading %}My Profile{% endblock %}
+{% block content %}
+<div class="max-w-2xl">
+  <p class="mb-4 text-sm text-slate-500">Update your account details. Your role and tenant access are managed by an administrator.</p>
+
+  <!-- Profile details -->
+  <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
+    <h2 class="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-400">Profile details</h2>
+    <div id="pform"><p class="text-sm text-slate-400">Loading…</p></div>
+    <div class="mt-2 flex items-center justify-end">
+      <button id="saveBtn" disabled class="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-brand-600/25 transition hover:bg-brand-700 disabled:opacity-60">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Save changes
+      </button>
+    </div>
+  </div>
+
+  <!-- Change password -->
+  <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
+    <h2 class="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-400">Change password</h2>
+    <p class="mb-4 text-sm text-slate-500">Enter your current password, then choose a new one.</p>
+    <div id="pwform">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div><label class="mb-1.5 block text-sm font-medium text-slate-700">Current password <span class="text-rose-500">*</span></label><input type="password" name="current_password" required class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"></div>
+        <div><label class="mb-1.5 block text-sm font-medium text-slate-700">New password <span class="text-rose-500">*</span></label><input type="password" name="new_password" required class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"></div>
+        <div><label class="mb-1.5 block text-sm font-medium text-slate-700">Confirm password <span class="text-rose-500">*</span></label><input type="password" name="confirm_password" required class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"></div>
+      </div>
+    </div>
+    <div class="mt-4 flex items-center justify-end">
+      <button id="pwBtn" class="inline-flex items-center gap-1.5 rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.5 12.5 8-8M17 5l3 3M14.5 8.5l3 3"/></svg>Update password
+      </button>
+    </div>
+  </div>
+
+  <div id="accessInfo" class="mt-6"></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function renderProfile(p) {
+  const form =
+    field('Username', 'username', p.username || '', { required: true }) +
+    field('Email', 'email', p.email || '', { type: 'email', placeholder: 'you@example.com' }) +
+    '<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">' +
+      field('First name', 'first_name', p.first_name || '') +
+      field('Last name', 'last_name', p.last_name || '') +
+    '</div>';
+  $('#pform').html(form);
+  $('#saveBtn').prop('disabled', false);
+
+  const tenants = p.role === 'PLATFORM_ADMIN' ? 'All tenants' : ((p.tenant_names || []).join(', ') || '—');
+  $('#accessInfo').html(
+    '<h2 class="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">Access (read-only)</h2>' +
+    '<div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-card text-sm">' +
+      '<div class="flex items-center justify-between border-b border-slate-100 py-1.5"><span class="text-slate-500">Role</span><span class="font-medium text-slate-800">' + escapeHtml(p.role || '—') + '</span></div>' +
+      '<div class="flex items-center justify-between py-1.5"><span class="text-slate-500">Tenants</span><span class="text-right font-medium text-slate-800">' + escapeHtml(tenants) + '</span></div>' +
+    '</div>'
+  );
+}
+
+api.get('profile/').done(renderProfile).fail(apiError);
+
+$('#saveBtn').on('click', function () {
+  const data = readForm($('#pform'));
+  if (!data.username || !data.username.trim()) { toast('Username is required.', 'error'); return; }
+  const $b = $(this).prop('disabled', true).html(icon('spinner', 'h-4 w-4 animate-spin') + 'Saving…');
+  api.update('profile/', data).done(function (p) {
+    toast('Profile updated', 'success');
+    renderProfile(p);
+    // reflect a changed username in the top-right menu without a reload
+    $('#userMenuBtn span').filter(':not(:has(*))').last().text(p.username);
+  }).fail(apiError).always(function () {
+    $b.prop('disabled', false).html(icon('check', 'h-4 w-4') + 'Save changes');
+  });
+});
+
+$('#pwBtn').on('click', function () {
+  const d = readForm($('#pwform'));
+  if (!d.current_password || !d.new_password || !d.confirm_password) { toast('All password fields are required.', 'error'); return; }
+  if (d.new_password !== d.confirm_password) { toast('New passwords do not match.', 'error'); return; }
+  const $b = $(this).prop('disabled', true).html(icon('spinner', 'h-4 w-4 animate-spin') + 'Updating…');
+  api.request('POST', API_BASE + 'profile/password/', d).done(function () {
+    toast('Password updated', 'success');
+    $('#pwform input').val('');
+  }).fail(apiError).always(function () {
+    $b.prop('disabled', false).html('Update password');
+  });
+});
+</script>
+{% endblock %}

@@ -69,6 +69,7 @@ ALLOWED_HOSTS = ["*"]
 
 # Application definition
 INSTALLED_APPS = [
+    "django.contrib.postgres",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -81,6 +82,7 @@ INSTALLED_APPS = [
     "tenants",
     "templates",
     "notifications",
+    "en_console",
 ]
 
 MIDDLEWARE = [
@@ -108,6 +110,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "en_console.context_processors.console",
             ],
         },
     },
@@ -115,12 +118,21 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "notifier.wsgi.application"
 
+# When True, all EMAIL notifications are suppressed (not delivered) and the
+# webmaster console shows a warning banner. WhatsApp/SMS are unaffected.
+DISABLE_EMAIL_SENDING = os.environ.get("DISABLE_EMAIL_SENDING", "false").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
+
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql_psycopg2",
+        "ENGINE": "django.db.backends.postgresql",
         "NAME": os.environ.get("DATABASE_NAME", "open_notifier"),
         "USER": os.environ.get("DATABASE_USER", "postgres"),
         "PASSWORD": os.environ.get("DATABASE_PASSWORD", "postgres"),
@@ -171,6 +183,11 @@ STATIC_ROOT = os.path.join(BASE_DIR, "notifier", "static")
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Webmaster console authentication redirects
+LOGIN_URL = "/notifier/webmaster-console/login/"
+LOGIN_REDIRECT_URL = "/notifier/webmaster-console/"
+LOGOUT_REDIRECT_URL = "/notifier/webmaster-console/login/"
 
 
 REST_FRAMEWORK = {

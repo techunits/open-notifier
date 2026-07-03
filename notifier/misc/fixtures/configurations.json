@@ -5,7 +5,7 @@
         "fields": {
             "tenant_id": "2714ebed-98b4-43d6-a3bb-698294493c8c",
             "notification_type": "EMAIL",
-            "provider": "LOCAL_EMAIL",
+            "provider": "SMTP_EMAIL",
             "metadata": {
                 "smtp_host": "smtp.example.com",
                 "smtp_port": 25,
@@ -14,8 +14,218 @@
                 "smtp_tls": true,
                 "smtp_from_email": "webmaster@example.com"
             },
+            "is_default": true,
             "is_enabled": true,
-            "is_deleted": false,
+            "created_on": 1665048975.596836,
+            "modified_on": 1665121045.019223,
+            "created_by": "d842af10-9b95-43ab-bf41-97651b5e437e",
+            "modified_by": "d842af10-9b95-43ab-bf41-97651b5e437e"
+        }
+    },
+    {
+        "model": "notifications.configuration",
+        "pk": "1a2b3c4d-0001-4000-8000-000000000001",
+        "fields": {
+            "tenant_id": "2714ebed-98b4-43d6-a3bb-698294493c8c",
+            "notification_type": "EMAIL",
+            "provider": "LOCAL_EMAIL",
+            "metadata": {
+                "from_email": "no-reply@example.com"
+            },
+            "is_default": false,
+            "is_enabled": true,
+            "created_on": 1665048975.596836,
+            "modified_on": 1665121045.019223,
+            "created_by": "d842af10-9b95-43ab-bf41-97651b5e437e",
+            "modified_by": "d842af10-9b95-43ab-bf41-97651b5e437e"
+        }
+    },
+    {
+        "model": "notifications.configuration",
+        "pk": "1a2b3c4d-0002-4000-8000-000000000002",
+        "fields": {
+            "tenant_id": "2714ebed-98b4-43d6-a3bb-698294493c8c",
+            "notification_type": "EMAIL",
+            "provider": "SENDGRID",
+            "metadata": {
+                "api_key": "SG.xxxxxxxxxxxxxxxxxxxxxx.yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+                "from_email": "no-reply@example.com",
+                "from_name": "Example",
+                "api_base_url": "https://api.sendgrid.com/v3"
+            },
+            "is_default": false,
+            "is_enabled": true,
+            "created_on": 1665048975.596836,
+            "modified_on": 1665121045.019223,
+            "created_by": "d842af10-9b95-43ab-bf41-97651b5e437e",
+            "modified_by": "d842af10-9b95-43ab-bf41-97651b5e437e"
+        }
+    },
+    {
+        "model": "notifications.configuration",
+        "pk": "1a2b3c4d-0003-4000-8000-000000000003",
+        "fields": {
+            "tenant_id": "2714ebed-98b4-43d6-a3bb-698294493c8c",
+            "notification_type": "EMAIL",
+            "provider": "ELASTIC_EMAIL",
+            "metadata": {
+                "api_key": "00000000-0000-0000-0000-000000000000",
+                "from_email": "no-reply@example.com",
+                "from_name": "Example",
+                "api_base_url": "https://api.elasticemail.com/v2"
+            },
+            "is_default": false,
+            "is_enabled": true,
+            "created_on": 1665048975.596836,
+            "modified_on": 1665121045.019223,
+            "created_by": "d842af10-9b95-43ab-bf41-97651b5e437e",
+            "modified_by": "d842af10-9b95-43ab-bf41-97651b5e437e"
+        }
+    },
+    {
+        "model": "notifications.configuration",
+        "pk": "1a2b3c4d-0004-4000-8000-000000000004",
+        "fields": {
+            "tenant_id": "2714ebed-98b4-43d6-a3bb-698294493c8c",
+            "notification_type": "EMAIL",
+            "provider": "MAILCHIMP",
+            "metadata": {
+                "api_key": "xxxxxxxxxxxxxxxxxxxxxx",
+                "from_email": "no-reply@example.com",
+                "from_name": "Example",
+                "api_base_url": "https://mandrillapp.com/api/1.0"
+            },
+            "is_default": false,
+            "is_enabled": true,
+            "created_on": 1665048975.596836,
+            "modified_on": 1665121045.019223,
+            "created_by": "d842af10-9b95-43ab-bf41-97651b5e437e",
+            "modified_by": "d842af10-9b95-43ab-bf41-97651b5e437e"
+        }
+    },
+    {
+        "model": "notifications.configuration",
+        "pk": "1a2b3c4d-0005-4000-8000-000000000005",
+        "fields": {
+            "tenant_id": "2714ebed-98b4-43d6-a3bb-698294493c8c",
+            "notification_type": "EMAIL",
+            "provider": "AWS_SES",
+            "metadata": {
+                "aws_access_key_id": "AKIAIOSFODNN7EXAMPLE",
+                "aws_secret_access_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+                "aws_region": "us-east-1",
+                "from_email": "no-reply@example.com"
+            },
+            "is_default": false,
+            "is_enabled": true,
+            "created_on": 1665048975.596836,
+            "modified_on": 1665121045.019223,
+            "created_by": "d842af10-9b95-43ab-bf41-97651b5e437e",
+            "modified_by": "d842af10-9b95-43ab-bf41-97651b5e437e"
+        }
+    },
+    {
+        "model": "notifications.configuration",
+        "pk": "1a2b3c4d-0006-4000-8000-000000000006",
+        "fields": {
+            "tenant_id": "2714ebed-98b4-43d6-a3bb-698294493c8c",
+            "notification_type": "EMAIL",
+            "provider": "MAILTRAP",
+            "metadata": {
+                "api_token": "xxxxxxxxxxxxxxxxxxxxxx",
+                "from_email": "no-reply@example.com",
+                "from_name": "Example",
+                "api_base_url": "https://send.api.mailtrap.io"
+            },
+            "is_default": false,
+            "is_enabled": true,
+            "created_on": 1665048975.596836,
+            "modified_on": 1665121045.019223,
+            "created_by": "d842af10-9b95-43ab-bf41-97651b5e437e",
+            "modified_by": "d842af10-9b95-43ab-bf41-97651b5e437e"
+        }
+    },
+    {
+        "model": "notifications.configuration",
+        "pk": "1a2b3c4d-0007-4000-8000-000000000007",
+        "fields": {
+            "tenant_id": "2714ebed-98b4-43d6-a3bb-698294493c8c",
+            "notification_type": "EMAIL",
+            "provider": "BREVO",
+            "metadata": {
+                "api_key": "xkeysib-xxxxxxxxxxxxxxxxxxxxxx",
+                "from_email": "no-reply@example.com",
+                "from_name": "Example",
+                "api_base_url": "https://api.brevo.com/v3"
+            },
+            "is_default": false,
+            "is_enabled": true,
+            "created_on": 1665048975.596836,
+            "modified_on": 1665121045.019223,
+            "created_by": "d842af10-9b95-43ab-bf41-97651b5e437e",
+            "modified_by": "d842af10-9b95-43ab-bf41-97651b5e437e"
+        }
+    },
+    {
+        "model": "notifications.configuration",
+        "pk": "1a2b3c4d-0008-4000-8000-000000000008",
+        "fields": {
+            "tenant_id": "2714ebed-98b4-43d6-a3bb-698294493c8c",
+            "notification_type": "EMAIL",
+            "provider": "MAILGUN",
+            "metadata": {
+                "api_key": "xxxxxxxxxxxxxxxxxxxxxx",
+                "domain": "mg.example.com",
+                "from_email": "no-reply@example.com",
+                "from_name": "Example",
+                "api_base_url": "https://api.mailgun.net/v3"
+            },
+            "is_default": false,
+            "is_enabled": true,
+            "created_on": 1665048975.596836,
+            "modified_on": 1665121045.019223,
+            "created_by": "d842af10-9b95-43ab-bf41-97651b5e437e",
+            "modified_by": "d842af10-9b95-43ab-bf41-97651b5e437e"
+        }
+    },
+    {
+        "model": "notifications.configuration",
+        "pk": "1a2b3c4d-0009-4000-8000-000000000009",
+        "fields": {
+            "tenant_id": "2714ebed-98b4-43d6-a3bb-698294493c8c",
+            "notification_type": "EMAIL",
+            "provider": "POSTMARK",
+            "metadata": {
+                "server_token": "00000000-0000-0000-0000-000000000000",
+                "from_email": "no-reply@example.com",
+                "from_name": "Example",
+                "message_stream": "outbound",
+                "api_base_url": "https://api.postmarkapp.com"
+            },
+            "is_default": false,
+            "is_enabled": true,
+            "created_on": 1665048975.596836,
+            "modified_on": 1665121045.019223,
+            "created_by": "d842af10-9b95-43ab-bf41-97651b5e437e",
+            "modified_by": "d842af10-9b95-43ab-bf41-97651b5e437e"
+        }
+    },
+    {
+        "model": "notifications.configuration",
+        "pk": "1a2b3c4d-0010-4000-8000-000000000010",
+        "fields": {
+            "tenant_id": "2714ebed-98b4-43d6-a3bb-698294493c8c",
+            "notification_type": "EMAIL",
+            "provider": "SENDPULSE",
+            "metadata": {
+                "client_id": "xxxxxxxxxxxxxxxxxxxxxx",
+                "client_secret": "xxxxxxxxxxxxxxxxxxxxxx",
+                "from_email": "no-reply@example.com",
+                "from_name": "Example",
+                "api_base_url": "https://api.sendpulse.com"
+            },
+            "is_default": false,
+            "is_enabled": true,
             "created_on": 1665048975.596836,
             "modified_on": 1665121045.019223,
             "created_by": "d842af10-9b95-43ab-bf41-97651b5e437e",

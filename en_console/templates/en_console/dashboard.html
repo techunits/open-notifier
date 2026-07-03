@@ -1,0 +1,85 @@
+{% extends "en_console/base.html" %}
+{% block title %}Dashboard &middot; eNotifier{% endblock %}
+{% block heading %}Dashboard{% endblock %}
+{% block content %}
+<p class="mb-5 text-sm text-slate-500">An overview of your notification workspace.</p>
+<div id="stats" class="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-5">
+  <div class="h-28 animate-pulse rounded-2xl border border-slate-200 bg-white shadow-card"></div>
+  <div class="h-28 animate-pulse rounded-2xl border border-slate-200 bg-white shadow-card"></div>
+  <div class="h-28 animate-pulse rounded-2xl border border-slate-200 bg-white shadow-card"></div>
+  <div class="h-28 animate-pulse rounded-2xl border border-slate-200 bg-white shadow-card"></div>
+  <div class="h-28 animate-pulse rounded-2xl border border-slate-200 bg-white shadow-card"></div>
+</div>
+
+<div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+  <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-card lg:col-span-1">
+    <h2 class="mb-5 text-xs font-semibold uppercase tracking-wider text-slate-400">Notification health</h2>
+    <div id="health" class="space-y-4 text-sm text-slate-600">Loading…</div>
+  </div>
+  <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-card lg:col-span-2">
+    <h2 class="mb-5 text-xs font-semibold uppercase tracking-wider text-slate-400">Recent notifications</h2>
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm">
+        <thead><tr class="border-b border-slate-100 text-left text-xs uppercase tracking-wider text-slate-400">
+          <th class="pb-3 pr-4 font-semibold">Status</th><th class="pb-3 pr-4 font-semibold">Reference</th><th class="pb-3 font-semibold">Created</th>
+        </tr></thead>
+        <tbody id="recentLogs"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const ICONS = {
+  tenants: '<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>',
+  users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>',
+  templates: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/>',
+  configurations: '<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
+  integrations: '<path d="M12 22v-5M9 8V2M15 8V2M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/>'
+};
+const TONES = {
+  tenants: 'bg-indigo-50 text-indigo-600', users: 'bg-sky-50 text-sky-600',
+  templates: 'bg-violet-50 text-violet-600', configurations: 'bg-amber-50 text-amber-600',
+  integrations: 'bg-emerald-50 text-emerald-600'
+};
+function statCard(key, label, value) {
+  return '<div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-card transition hover:shadow-pop">' +
+    '<div class="flex items-center justify-between">' +
+      '<span class="inline-flex h-10 w-10 items-center justify-center rounded-xl ' + TONES[key] + '">' +
+        '<svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">' + ICONS[key] + '</svg></span>' +
+    '</div>' +
+    '<p class="mt-4 text-3xl font-bold tracking-tight text-slate-900">' + value + '</p>' +
+    '<p class="mt-0.5 text-sm text-slate-500">' + label + '</p></div>';
+}
+// statusBadge() is provided by base.html (shared, with status icons)
+function fmt(ts) { if (!ts) return '—'; const d = new Date(ts * 1000); return isNaN(d) ? ts : d.toLocaleString(); }
+function healthRow(dot, label, value) {
+  return '<div class="flex items-center justify-between">' +
+    '<span class="flex items-center gap-2"><span class="h-2 w-2 rounded-full ' + dot + '"></span>' + label + '</span>' +
+    '<b class="text-slate-900">' + value + '</b></div>';
+}
+
+api.get('stats/').done(function (d) {
+  $('#stats').html(
+    statCard('tenants', 'Tenants', d.tenants) +
+    statCard('users', 'Users', d.users) +
+    statCard('templates', 'Templates', d.templates) +
+    statCard('configurations', 'Configurations', d.configurations) +
+    statCard('integrations', 'Integrations', d.integrations)
+  );
+  const n = d.notifications;
+  $('#health').html(
+    healthRow('bg-slate-400', 'Total sent', n.total) +
+    healthRow('bg-emerald-500', 'Success', n.success) +
+    healthRow('bg-rose-500', 'Failed', n.failed) +
+    healthRow('bg-amber-500', 'Queued', n.queued)
+  );
+  const rows = (d.recent_logs || []).map(l =>
+    '<tr class="border-b border-slate-50"><td class="py-2.5 pr-4">' + statusBadge(l.status) + '</td>' +
+    '<td class="py-2.5 pr-4 font-mono text-xs text-slate-500">' + escapeHtml(l.notification_ref) + '</td>' +
+    '<td class="py-2.5 text-slate-500">' + fmt(l.created_on) + '</td></tr>').join('');
+  $('#recentLogs').html(rows || '<tr><td colspan="3" class="py-6 text-center text-slate-400">No notifications yet.</td></tr>');
+}).fail(apiError);
+</script>
+{% endblock %}

@@ -16,6 +16,9 @@ class NotificationView(NotificationURLValidatorView):
         # request param validation
         self.validate_request_params(tenant_id=tenant_id)
 
+        # authenticate the tenant's API key (Authorization header, no Bearer)
+        self.authenticate_tenant_api_key()
+
         # payload validation
         payload = request.data
         logger.debug(f"Request payload: {payload}")
@@ -79,6 +82,9 @@ class NotificationView(NotificationURLValidatorView):
     def get(self, request, tenant_id):
         # request param validation
         self.validate_request_params(tenant_id=tenant_id)
+
+        # authenticate the tenant's API key (Authorization header, no Bearer)
+        self.authenticate_tenant_api_key()
 
         notifications = NotificationLog.objects.filter(
             notification_ref__tenant=self.tenant

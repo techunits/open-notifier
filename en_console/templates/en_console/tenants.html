@@ -1,0 +1,70 @@
+{% extends "en_console/base.html" %}
+{% block title %}Tenants &middot; eNotifier{% endblock %}
+{% block heading %}Tenants{% endblock %}
+{% block content %}
+<div class="mb-4 flex items-center justify-between">
+  <p class="text-sm text-slate-500">Organisations that own templates, configurations and notifications.</p>
+  {% if role == 'PLATFORM_ADMIN' %}<button id="addBtn" class="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-brand-600/25 transition hover:bg-brand-700"><svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New Tenant</button>{% endif %}
+</div>
+<div class="md:overflow-x-auto md:rounded-2xl md:border md:border-slate-200 md:bg-white md:shadow-card">
+  <table class="min-w-full text-sm responsive-cards">
+    <thead class="border-b border-slate-200 bg-slate-50/70 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+      <tr><th class="px-4 py-3">Name</th><th class="px-4 py-3">ID</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Actions</th></tr>
+    </thead>
+    <tbody id="rows"><tr><td colspan="4" class="px-4 py-6 text-center text-slate-400">Loading…</td></tr></tbody>
+  </table>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const canDelete = WC.role === 'PLATFORM_ADMIN';  // only platform admins create/delete tenants
+function badge(on) {
+  return on
+    ? '<span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">Enabled</span>'
+    : '<span class="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600">Disabled</span>';
+}
+function load() {
+  api.list('tenants/').done(function (items) {
+    if (!items.length) { $('#rows').html('<tr><td colspan="4" class="px-4 py-6 text-center text-slate-400">No tenants yet.</td></tr>'); return; }
+    $('#rows').html(items.map(t =>
+      '<tr class="border-t">' +
+      '<td data-label="Name" class="px-4 py-3 font-medium">' + escapeHtml(t.name) + '</td>' +
+      '<td data-label="ID" class="px-4 py-3 font-mono text-xs text-slate-500">' + escapeHtml(t.id) + '</td>' +
+      '<td data-label="Status" class="px-4 py-3">' + badge(t.is_enabled) + '</td>' +
+      '<td data-label="" class="px-4 py-3 text-right">' + kebabMenu(
+        menuItem('data-edit=\'' + escapeHtml(JSON.stringify(t)) + '\'', 'pencil', 'Edit') +
+        (canDelete ? menuItem('data-del="' + t.id + '" data-name="' + escapeHtml(t.name) + '"', 'trash', 'Delete', true) : '')
+      ) + '</td></tr>').join(''));
+  }).fail(apiError);
+}
+function formHtml(t) {
+  t = t || {};
+  return field('Name', 'name', t.name || '', { required: true, placeholder: 'Acme Inc.' }) +
+         field('Status', 'is_enabled', t.is_enabled !== false, { type: 'checkbox' });
+}
+$('#addBtn').on('click', function () {
+  Modal.open('New Tenant', formHtml(), function () {
+    const data = readForm($('#modalBody'));
+    Modal.busy(true);
+    api.create('tenants/', data).done(function () { Modal.close(); toast('Tenant created', 'success'); load(); })
+      .fail(apiError).always(function () { Modal.busy(false); });
+  });
+});
+$('#rows').on('click', '[data-edit]', function () {
+  const t = JSON.parse($(this).attr('data-edit'));
+  Modal.open('Edit Tenant', formHtml(t), function () {
+    const data = readForm($('#modalBody'));
+    Modal.busy(true);
+    api.update('tenants/' + t.id + '/', data).done(function () { Modal.close(); toast('Tenant updated', 'success'); load(); })
+      .fail(apiError).always(function () { Modal.busy(false); });
+  });
+});
+$('#rows').on('click', '[data-del]', function () {
+  const id = $(this).attr('data-del'), name = $(this).attr('data-name');
+  confirmDelete('Delete tenant "' + name + '"? This is a soft delete.', function () {
+    api.remove('tenants/' + id + '/').done(function () { Modal.close(); toast('Tenant deleted', 'success'); load(); }).fail(apiError);
+  });
+});
+load();
+</script>
+{% endblock %}

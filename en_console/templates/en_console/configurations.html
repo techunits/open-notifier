@@ -1,0 +1,297 @@
+{% extends "en_console/base.html" %}
+{% block title %}Configurations &middot; eNotifier{% endblock %}
+{% block heading %}Configurations{% endblock %}
+{% block content %}
+<div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+  <p class="text-sm text-slate-500">Per-tenant delivery channels. The provider's manifest drives the settings form.</p>
+  <div class="flex items-center gap-2">
+    <select id="tenantFilter" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"><option value="">All tenants</option></select>
+    <button id="addBtn" class="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-brand-600/25 transition hover:bg-brand-700"><svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New Configuration</button>
+  </div>
+</div>
+<div class="md:overflow-x-auto md:rounded-2xl md:border md:border-slate-200 md:bg-white md:shadow-card">
+  <table class="min-w-full text-sm responsive-cards">
+    <thead class="border-b border-slate-200 bg-slate-50/70 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+      <tr><th class="px-4 py-3">Tenant</th><th class="px-4 py-3">Type</th><th class="px-4 py-3">Provider</th><th class="px-4 py-3">Default</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Actions</th></tr>
+    </thead>
+    <tbody id="rows"><tr><td colspan="6" class="px-4 py-6 text-center text-slate-400">Loading…</td></tr></tbody>
+  </table>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+let META = {}, TENANTS = [], INTEGRATIONS = {};
+let metaMode = 'fields'; // 'fields' (separated inputs) | 'json' (raw plaintext)
+
+function badge(on, on_t, off_t) {
+  return on ? '<span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">' + on_t + '</span>'
+            : '<span class="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600">' + off_t + '</span>';
+}
+function tenantName(id) { const t = TENANTS.find(x => x.id === id); return t ? t.name : id; }
+function providerLogo(provider) {
+  const man = INTEGRATIONS[provider];
+  return man && man.logo ? '<span class="inline-flex h-5 w-5 shrink-0">' + man.logo + '</span>' : '';
+}
+
+function load() {
+  const tf = $('#tenantFilter').val();
+  api.list('configurations/', tf ? { tenant: tf } : {}).done(function (items) {
+    if (!items.length) { $('#rows').html('<tr><td colspan="6" class="px-4 py-6 text-center text-slate-400">No configurations.</td></tr>'); return; }
+    $('#rows').html(items.map(c =>
+      '<tr class="border-t">' +
+      '<td data-label="Tenant" class="px-4 py-3 font-medium">' + escapeHtml(c.tenant_name || tenantName(c.tenant)) + '</td>' +
+      '<td data-label="Type" class="px-4 py-3">' + typeBadge(c.notification_type) + '</td>' +
+      '<td data-label="Provider" class="px-4 py-3"><span class="inline-flex items-center gap-2">' + providerLogo(c.provider) +
+        '<span class="font-mono text-xs">' + escapeHtml(c.provider) + '</span></span></td>' +
+      '<td data-label="Default" class="px-4 py-3">' + (c.is_default ? '⭐' : '—') + '</td>' +
+      '<td data-label="Status" class="px-4 py-3">' + badge(c.is_enabled, 'Enabled', 'Disabled') + '</td>' +
+      '<td data-label="" class="px-4 py-3 text-right">' + kebabMenu(
+        menuItem('data-edit=\'' + escapeHtml(JSON.stringify(c)) + '\'', 'pencil', 'Edit') +
+        menuItem('data-del="' + c.id + '"', 'trash', 'Delete', true)
+      ) + '</td></tr>').join(''));
+  }).fail(apiError);
+}
+
+// Build the "Provider settings" section with an AWS Secrets Manager-style
+// toggle between separated key/value fields and a raw plaintext JSON editor.
+function metaFieldsHtml(provider, metadata) {
+  metadata = metadata || {};
+  const man = INTEGRATIONS[provider];
+  const hasFields = !!(man && man.config_fields && man.config_fields.length);
+  metaMode = hasFields ? 'fields' : 'json';
+
+  const logo = man && man.logo ? '<span class="inline-flex h-5 w-5">' + man.logo + '</span>' : '';
+  const title = man ? escapeHtml(man.name || provider) : 'Provider settings';
+  const btnCls = 'meta-mode-btn rounded-md px-2.5 py-1 font-medium transition';
+  const toggle = hasFields
+    ? '<div class="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 text-xs">' +
+        '<button type="button" data-meta-mode="fields" class="' + btnCls + ' bg-brand-600 text-white">Key / value</button>' +
+        '<button type="button" data-meta-mode="json" class="' + btnCls + ' text-slate-500">Plaintext (JSON)</button>' +
+      '</div>'
+    : '';
+
+  let html = '<div class="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-3">';
+  html += '<div class="mb-3 flex items-center justify-between gap-2">' +
+    '<div class="flex items-center gap-2">' + logo + '<span class="text-sm font-semibold text-slate-600">' + title + '</span></div>' +
+    toggle + '</div>';
+  html += '<div id="metaErrors" class="mb-3 hidden rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700"></div>';
+
+  // Separated fields view
+  html += '<div id="metaFieldsView" class="kv-grid' + (hasFields ? '' : ' hidden') + '">';
+  if (hasFields) {
+    man.config_fields.forEach(function (f) {
+      const val = metadata[f.name] !== undefined ? metadata[f.name] : (f.default !== undefined ? f.default : '');
+      const t = f.type === 'boolean' ? 'checkbox' : (f.type === 'number' ? 'number' : (f.type === 'password' ? 'password' : (f.type === 'email' ? 'email' : (f.type === 'url' ? 'url' : 'text'))));
+      html += '<div data-meta-type="' + f.type + '">' +
+        field(f.label, 'meta__' + f.name, val, { type: t, placeholder: f.placeholder, required: f.required, min: f.min, max: f.max }) +
+        '</div>';
+    });
+  }
+  html += '</div>';
+
+  // Raw JSON view
+  html += '<div id="metaRawView"' + (hasFields ? ' class="hidden"' : '') + '>';
+  html += field('Metadata (JSON)', 'meta__raw', JSON.stringify(metadata, null, 2), { type: 'textarea', rows: 9 });
+  html += '<p class="-mt-2 text-xs text-slate-400">Stored verbatim as raw JSON. Field rules still apply on save.</p>';
+  html += '</div>';
+
+  return html + '</div>';
+}
+
+// ---- separated-fields <-> raw-JSON helpers ----
+function readFieldValues($scope) {
+  const md = {};
+  $scope.find('#metaFieldsView [data-meta-type]').each(function () {
+    const type = $(this).attr('data-meta-type');
+    const $input = $(this).find('input, select, textarea');
+    const name = $input.attr('name').replace('meta__', '');
+    if (type === 'boolean') md[name] = $input.is(':checked');
+    else if (type === 'number') md[name] = $input.val() === '' ? null : Number($input.val());
+    else md[name] = $input.val();
+  });
+  return md;
+}
+function writeFieldValues($scope, md) {
+  $scope.find('#metaFieldsView [data-meta-type]').each(function () {
+    const type = $(this).attr('data-meta-type');
+    const $input = $(this).find('input, select, textarea');
+    const name = $input.attr('name').replace('meta__', '');
+    const v = md[name];
+    if (type === 'boolean') $input.prop('checked', !!v);
+    else $input.val(v === undefined || v === null ? '' : v);
+  });
+}
+function setMetaMode($scope, mode) {
+  metaMode = mode;
+  $scope.find('#metaFieldsView').toggleClass('hidden', mode !== 'fields');
+  $scope.find('#metaRawView').toggleClass('hidden', mode !== 'json');
+  $scope.find('.meta-mode-btn').each(function () {
+    const active = $(this).data('meta-mode') === mode;
+    $(this).toggleClass('bg-brand-600 text-white', active).toggleClass('text-slate-500', !active);
+  });
+}
+
+// Provider-settings validation driven by the integration manifest.
+// Kept in lock-step with the regexes in en_console/metadata.py.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const HOST_RE = /^(?=.{1,253}$)([a-zA-Z0-9_](?:[a-zA-Z0-9_-]{0,61}[a-zA-Z0-9])?)(\.[a-zA-Z0-9_](?:[a-zA-Z0-9_-]{0,61}[a-zA-Z0-9])?)*$/;
+const URL_RE = /^https?:\/\/[^\s]+\.[^\s]+$/;
+
+// Mirror of en_console/metadata.py _to_int: accept ints, integer-valued
+// floats and whole-number strings (so raw-JSON "25" validates like the server).
+function toIntLike(v) {
+  if (typeof v === 'boolean') return null;
+  if (typeof v === 'number') return Number.isInteger(v) ? v : null;
+  if (typeof v === 'string' && /^-?\d+$/.test(v.trim())) return parseInt(v.trim(), 10);
+  return null;
+}
+
+function validateMetadata(provider, md) {
+  const man = INTEGRATIONS[provider];
+  const errors = [];
+  if (!man || !man.config_fields || !man.config_fields.length) return errors; // raw JSON path
+  man.config_fields.forEach(function (f) {
+    const v = md[f.name];
+    if (f.type === 'boolean') return;
+    const empty = (v === '' || v === null || v === undefined);
+    if (f.required && empty) { errors.push({ name: f.name, msg: f.label + ' is required.' }); return; }
+    if (empty) return;
+    if (f.type === 'number') {
+      const iv = toIntLike(v);
+      if (iv === null) { errors.push({ name: f.name, msg: f.label + ' must be a whole number.' }); return; }
+      if ((f.min !== undefined && iv < f.min) || (f.max !== undefined && iv > f.max)) {
+        errors.push({ name: f.name, msg: f.label + ' must be between ' + f.min + ' and ' + f.max + '.' });
+      }
+      return;
+    } else if (f.type === 'email') {
+      if (!EMAIL_RE.test(String(v))) { errors.push({ name: f.name, msg: f.label + ' must be a valid email address.' }); return; }
+    } else if (f.type === 'host') {
+      if (!HOST_RE.test(String(v).trim())) { errors.push({ name: f.name, msg: f.label + ' must be a valid hostname.' }); return; }
+    } else if (f.type === 'url') {
+      if (!URL_RE.test(String(v).trim())) { errors.push({ name: f.name, msg: f.label + ' must be a valid URL (http:// or https://).' }); return; }
+    }
+    // Optional per-field regex format check.
+    if (f.pattern) {
+      let re; try { re = new RegExp(f.pattern); } catch (e) { re = null; }
+      if (re && !re.test(String(v).trim())) errors.push({ name: f.name, msg: f.pattern_message || (f.label + ' has an invalid format.') });
+    }
+  });
+  return errors;
+}
+
+function showMetaErrors($scope, errors) {
+  $scope.find('[name^="meta__"]').removeClass('border-rose-500');
+  const $box = $scope.find('#metaErrors');
+  if (!errors || !errors.length) { $box.addClass('hidden').empty(); return; }
+  if (metaMode === 'json') $scope.find('[name="meta__raw"]').addClass('border-rose-500');
+  else errors.forEach(function (e) { $scope.find('[name="meta__' + e.name + '"]').addClass('border-rose-500'); });
+  $box.removeClass('hidden').html('<ul class="list-disc space-y-0.5 pl-4">' +
+    errors.map(e => '<li>' + escapeHtml(e.msg) + '</li>').join('') + '</ul>');
+}
+
+// Only providers that are enabled on the Integrations page can be configured.
+function enabledProviders() {
+  return (META.providers || []).filter(function (p) { const m = INTEGRATIONS[p]; return m && m.is_enabled; });
+}
+function formHtml(c) {
+  c = c || {};
+  const providerOpts = enabledProviders();
+  const provider = c.provider || providerOpts[0] || '';
+  return field('Tenant', 'tenant', c.tenant || '', { type: 'select', options: TENANTS.map(t => ({ value: t.id, label: t.name })) }) +
+         field('Notification type', 'notification_type', c.notification_type || META.notification_types[0], { type: 'select', options: META.notification_types }) +
+         field('Provider', 'provider', provider, { type: 'select', options: providerOpts }) +
+         '<div id="metaFields">' + metaFieldsHtml(provider, c.metadata) + '</div>' +
+         '<div class="mt-2 grid grid-cols-2 gap-2">' +
+           field('Default for this type', 'is_default', !!c.is_default, { type: 'checkbox' }) +
+           field('Enabled', 'is_enabled', c.id ? c.is_enabled : true, { type: 'checkbox' }) +
+         '</div>';
+}
+
+function collectMetadata($scope) {
+  if (metaMode === 'json') {
+    const raw = $scope.find('[name="meta__raw"]');
+    let parsed;
+    try { parsed = JSON.parse(raw.val() || '{}'); }
+    catch (e) { throw 'Metadata is not valid JSON.'; }
+    if (typeof parsed !== 'object' || Array.isArray(parsed) || parsed === null) throw 'Metadata must be a JSON object.';
+    return parsed;
+  }
+  return readFieldValues($scope);
+}
+
+function buildPayload($scope) {
+  const base = readForm($scope);
+  const out = {
+    tenant: base.tenant, notification_type: base.notification_type, provider: base.provider,
+    is_default: base.is_default, is_enabled: base.is_enabled, metadata: collectMetadata($scope)
+  };
+  return out;
+}
+
+// Re-render provider settings when provider changes
+$(document).on('change', '#modalBody [name="provider"]', function () {
+  $('#metaFields').html(metaFieldsHtml($(this).val(), {}));
+});
+
+// AWS Secrets Manager-style switch between separated fields and raw JSON
+$(document).on('click', '#modalBody .meta-mode-btn', function () {
+  const target = $(this).data('meta-mode');
+  const $scope = $('#modalBody');
+  if (target === metaMode) return;
+  if (target === 'json') {
+    // serialize current field values into the JSON editor
+    $scope.find('[name="meta__raw"]').val(JSON.stringify(readFieldValues($scope), null, 2));
+    setMetaMode($scope, 'json');
+  } else {
+    // parse the JSON back into the fields (block the switch on invalid JSON)
+    let md;
+    try { md = JSON.parse($scope.find('[name="meta__raw"]').val() || '{}'); }
+    catch (e) { toast('Metadata is not valid JSON — fix it before switching to fields.', 'error'); return; }
+    if (typeof md !== 'object' || Array.isArray(md) || md === null) { toast('Metadata must be a JSON object.', 'error'); return; }
+    writeFieldValues($scope, md);
+    setMetaMode($scope, 'fields');
+  }
+});
+
+$('#addBtn').on('click', function () {
+  if (!TENANTS.length) { toast('Create a tenant first.', 'error'); return; }
+  if (!enabledProviders().length) { toast('Enable a provider on the Integrations page first.', 'error'); return; }
+  Modal.open('New Configuration', formHtml(), function () {
+    let data; try { data = buildPayload($('#modalBody')); } catch (e) { toast(e, 'error'); return; }
+    const errs = validateMetadata(data.provider, data.metadata);
+    if (errs.length) { showMetaErrors($('#modalBody'), errs); toast(errs[0].msg, 'error'); return; }
+    showMetaErrors($('#modalBody'), []);
+    Modal.busy(true);
+    api.create('configurations/', data).done(function () { Modal.close(); toast('Configuration created', 'success'); load(); })
+      .fail(apiError).always(function () { Modal.busy(false); });
+  });
+});
+$('#rows').on('click', '[data-edit]', function () {
+  const c = JSON.parse($(this).attr('data-edit'));
+  Modal.open('Edit Configuration', formHtml(c), function () {
+    let data; try { data = buildPayload($('#modalBody')); } catch (e) { toast(e, 'error'); return; }
+    const errs = validateMetadata(data.provider, data.metadata);
+    if (errs.length) { showMetaErrors($('#modalBody'), errs); toast(errs[0].msg, 'error'); return; }
+    showMetaErrors($('#modalBody'), []);
+    Modal.busy(true);
+    api.update('configurations/' + c.id + '/', data).done(function () { Modal.close(); toast('Configuration updated', 'success'); load(); })
+      .fail(apiError).always(function () { Modal.busy(false); });
+  });
+});
+$('#rows').on('click', '[data-del]', function () {
+  const id = $(this).attr('data-del');
+  confirmDelete('Delete this configuration? This is a soft delete.', function () {
+    api.remove('configurations/' + id + '/').done(function () { Modal.close(); toast('Deleted', 'success'); load(); }).fail(apiError);
+  });
+});
+$('#tenantFilter').on('change', load);
+
+// Bootstrap reference data, then render
+$.when(api.get('meta/'), api.list('tenants/'), api.list('integrations/')).done(function (m, t, i) {
+  META = m[0]; TENANTS = t[0];
+  (i[0].integrations || []).forEach(function (man) { INTEGRATIONS[man.provider] = man; });
+  $('#tenantFilter').append(TENANTS.map(x => '<option value="' + x.id + '">' + escapeHtml(x.name) + '</option>').join(''));
+  load();
+}).fail(apiError);
+</script>
+{% endblock %}

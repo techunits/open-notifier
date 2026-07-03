@@ -1,0 +1,69 @@
+{% extends "en_console/base.html" %}
+{% block title %}Email Templates &middot; eNotifier{% endblock %}
+{% block heading %}Email Templates{% endblock %}
+{% block content %}
+<div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+  <p class="text-sm text-slate-500">Author notification templates with a visual editor, live preview and variable detection.</p>
+  <div class="flex items-center gap-2">
+    <select id="tenantFilter" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"><option value="">All tenants</option></select>
+    <a href="{% url 'en_console:template-new' %}" class="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-brand-600/25 transition hover:bg-brand-700"><svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New Template</a>
+  </div>
+</div>
+<div class="md:overflow-x-auto md:rounded-2xl md:border md:border-slate-200 md:bg-white md:shadow-card">
+  <table class="min-w-full text-sm responsive-cards">
+    <thead class="border-b border-slate-200 bg-slate-50/70 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+      <tr><th class="px-4 py-3">Name</th><th class="px-4 py-3">Ref</th><th class="px-4 py-3">Tenant</th><th class="px-4 py-3">Types</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Actions</th></tr>
+    </thead>
+    <tbody id="rows"><tr><td colspan="6" class="px-4 py-6 text-center text-slate-400">Loading…</td></tr></tbody>
+  </table>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const TPL_URL = "{% url 'en_console:templates' %}";  // ".../templates/"
+let TENANTS = [];
+
+function tenantName(id) { const t = TENANTS.find(x => x.id === id); return t ? t.name : id; }
+function badge(on) { return on ? '<span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">Enabled</span>' : '<span class="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600">Disabled</span>'; }
+
+function load() {
+  const tf = $('#tenantFilter').val();
+  api.list('templates/', tf ? { tenant: tf } : {}).done(function (items) {
+    if (!items.length) { $('#rows').html('<tr><td colspan="6" class="px-4 py-6 text-center text-slate-400">No templates.</td></tr>'); return; }
+    $('#rows').html(items.map(t =>
+      '<tr class="border-t">' +
+      '<td data-label="Name" class="px-4 py-3 font-medium">' + escapeHtml(t.name) + '</td>' +
+      '<td data-label="Ref" class="px-4 py-3 font-mono text-xs">' + escapeHtml(t.ref) + '</td>' +
+      '<td data-label="Tenant" class="px-4 py-3">' + escapeHtml(t.tenant_name || tenantName(t.tenant)) + '</td>' +
+      '<td data-label="Types" class="px-4 py-3"><span class="inline-flex flex-wrap gap-1">' + (t.notification_types || []).map(typeBadge).join('') + '</span></td>' +
+      '<td data-label="Status" class="px-4 py-3">' + badge(t.is_enabled) + '</td>' +
+      '<td data-label="" class="px-4 py-3 text-right">' + kebabMenu(
+        menuItem('data-edit="' + t.id + '"', 'pencil', 'Edit') +
+        menuItem('data-del="' + t.id + '" data-name="' + escapeHtml(t.name) + '"', 'trash', 'Delete', true)
+      ) + '</td></tr>').join(''));
+  }).fail(apiError);
+}
+
+// Edit / New navigate to the full-page editor.
+$('#rows').on('click', '[data-edit]', function () { window.location = TPL_URL + $(this).data('edit') + '/edit/'; });
+$('#rows').on('click', '[data-del]', function () {
+  const id = $(this).data('del'), name = $(this).attr('data-name');
+  confirmDelete('Delete template "' + name + '"? This is a soft delete.', function () {
+    api.remove('templates/' + id + '/').done(function () { Modal.close(); toast('Deleted', 'success'); load(); }).fail(apiError);
+  });
+});
+$('#tenantFilter').on('change', load);
+
+// Surface a "saved" toast after returning from the editor.
+if (new URLSearchParams(location.search).get('saved')) {
+  toast('Template saved', 'success');
+  history.replaceState({}, '', location.pathname);
+}
+
+api.list('tenants/').done(function (t) {
+  TENANTS = t || [];
+  $('#tenantFilter').append(TENANTS.map(x => '<option value="' + x.id + '">' + escapeHtml(x.name) + '</option>').join(''));
+  load();
+}).fail(apiError);
+</script>
+{% endblock %}

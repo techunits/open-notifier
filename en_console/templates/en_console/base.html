@@ -1,0 +1,549 @@
+{% load static %}
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <title>{% block title %}eNotifier Webmaster Console{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.jquery.com/jquery-4.0.0.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    // Apply the saved theme before paint to avoid a flash of the wrong theme.
+    (function () {
+      try {
+        var t = localStorage.getItem('wc-theme');
+        if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) {}
+    })();
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] },
+          colors: {
+            brand: {
+              DEFAULT: '#4f46e5', dark: '#0f172a',
+              50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe', 300: '#a5b4fc',
+              400: '#818cf8', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca',
+              800: '#3730a3', 900: '#312e81'
+            }
+          },
+          boxShadow: {
+            card: '0 1px 2px 0 rgb(15 23 42 / 0.04), 0 1px 3px 0 rgb(15 23 42 / 0.06)',
+            pop: '0 10px 40px -12px rgb(15 23 42 / 0.25)'
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    [x-cloak]{display:none}
+    body{-webkit-font-smoothing:antialiased}
+    ::-webkit-scrollbar{width:9px;height:9px}
+    ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:9px}
+    ::-webkit-scrollbar-thumb:hover{background:#94a3b8}
+    /* subtle row hover across all content tables */
+    main table tbody tr{transition:background-color .15s ease}
+    main table tbody tr:hover{background:#f8fafc}
+    #toasts>div{animation:toastIn .25s cubic-bezier(.21,1.02,.73,1)}
+    @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+    #modal>div{animation:popIn .18s ease}
+    @keyframes popIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+
+    /* ===== Key / value editor: label + control side-by-side (>= sm) ===== */
+    @media (min-width:640px){
+      .kv-grid [data-meta-type] > div{
+        display:grid; grid-template-columns:minmax(120px,38%) 1fr;
+        align-items:center; column-gap:.75rem; margin-bottom:.6rem;
+      }
+      .kv-grid [data-meta-type] > div > label:first-child{ margin-bottom:0; }
+    }
+
+    /* ===== Responsive: turn data tables into cards on small screens ===== */
+    @media (max-width:767px){
+      table.responsive-cards thead{ display:none; }
+      table.responsive-cards, table.responsive-cards tbody{ display:block; width:100%; }
+      table.responsive-cards tr{
+        display:block; border:1px solid #e2e8f0; border-radius:.85rem; background:#fff;
+        margin-bottom:.75rem; padding:.35rem .25rem; box-shadow:0 1px 2px rgb(15 23 42 / .06);
+      }
+      table.responsive-cards td{
+        display:flex; align-items:center; justify-content:space-between; gap:1rem;
+        padding:.55rem .9rem !important; text-align:right; border:0 !important;
+        overflow-wrap:anywhere;
+      }
+      table.responsive-cards td::before{
+        content:attr(data-label); text-align:left; font-size:.7rem; font-weight:600;
+        text-transform:uppercase; letter-spacing:.05em; color:#64748b; white-space:nowrap; flex:none;
+      }
+      table.responsive-cards td[data-label='']::before{ display:none; }
+      table.responsive-cards td:last-child{ justify-content:flex-end; border-top:1px solid #f1f5f9 !important; margin-top:.15rem; padding-top:.7rem !important; }
+    }
+
+    /* ===== Dark theme (overrides the light utility classes under html.dark) ===== */
+    html.dark{ color-scheme:dark; }
+    html.dark body{ background-color:#0b1220; color:#e5e7eb; }
+    html.dark .bg-white{ background-color:#111827 !important; }
+    html.dark .bg-white\/80{ background-color:rgb(17 24 39 / .85) !important; }
+    html.dark .bg-slate-50,
+    html.dark .bg-slate-50\/70,
+    html.dark .bg-slate-50\/60{ background-color:#0f172a !important; }
+    html.dark .bg-slate-100{ background-color:#1e293b !important; }
+    html.dark .text-slate-900{ color:#f8fafc !important; }
+    html.dark .text-slate-800{ color:#e5e7eb !important; }
+    html.dark .text-slate-700{ color:#d1d5db !important; }
+    html.dark .text-slate-600{ color:#9ca3af !important; }
+    html.dark .text-slate-500{ color:#94a3b8 !important; }
+    html.dark .text-slate-400{ color:#6b7280 !important; }
+    html.dark .border-slate-200,
+    html.dark .border-slate-100{ border-color:#1f2a3b !important; }
+    html.dark .border-slate-300{ border-color:#374151 !important; }
+    html.dark .ring-slate-200{ --tw-ring-color:#1f2a3b !important; }
+    html.dark input, html.dark select, html.dark textarea{
+      background-color:#0f172a !important; border-color:#374151 !important; color:#e5e7eb !important;
+    }
+    html.dark input::placeholder, html.dark textarea::placeholder{ color:#64748b !important; }
+    html.dark main table tbody tr:hover{ background:#0f172a; }
+    html.dark table.responsive-cards tr{ background:#111827; border-color:#1f2a3b; }
+    html.dark table.responsive-cards td::before{ color:#94a3b8; }
+    html.dark table.responsive-cards td:last-child{ border-top-color:#1f2a3b !important; }
+    html.dark ::-webkit-scrollbar-thumb{ background:#334155; }
+  </style>
+</head>
+<body class="h-full bg-slate-50 text-slate-800 font-sans">
+<div class="min-h-full flex">
+  <!-- Sidebar -->
+  <aside id="sidebar" class="fixed inset-y-0 left-0 z-30 w-64 -translate-x-full transform bg-slate-900 text-slate-300 transition-transform duration-200 md:translate-x-0 md:static md:inset-auto flex flex-col border-r border-slate-800">
+    <div class="flex items-center gap-3 px-5 h-16">
+      <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white font-bold shadow-lg shadow-brand-900/40">eN</span>
+      <div class="leading-tight">
+        <div class="font-semibold text-white tracking-tight">eNotifier</div>
+        <div class="text-[11px] text-slate-500">Webmaster Console</div>
+      </div>
+    </div>
+    <nav class="flex-1 px-3 py-3 space-y-1 overflow-y-auto">
+      <p class="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-widest text-slate-600">Manage</p>
+      {% for page in pages %}
+      <a href="{% url 'en_console:'|add:page.key %}"
+         class="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition
+                {% if active == page.key %}bg-brand-600 text-white shadow-md shadow-brand-900/30{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %}">
+        <span class="shrink-0 {% if active == page.key %}text-white{% else %}text-slate-500 group-hover:text-slate-300{% endif %}">
+          {% if page.icon == 'grid' %}<svg class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+          {% elif page.icon == 'activity' %}<svg class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          {% elif page.icon == 'building' %}<svg class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path stroke-linecap="round" d="M10 6h4M10 10h4M10 14h4M10 18h4"/></svg>
+          {% elif page.icon == 'users' %}<svg class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          {% elif page.icon == 'mail' %}<svg class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+          {% elif page.icon == 'sliders' %}<svg class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
+          {% elif page.icon == 'plug' %}<svg class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 22v-5M9 8V2M15 8V2M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/></svg>
+          {% elif page.icon == 'key' %}<svg class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.5 12.5 8-8M17 5l3 3M14.5 8.5l3 3"/></svg>
+          {% else %}<span class="inline-block h-2 w-2 rounded-full bg-current"></span>{% endif %}
+        </span>
+        {{ page.label }}
+      </a>
+      {% endfor %}
+    </nav>
+    <div class="px-5 py-4 border-t border-slate-800 text-xs text-slate-500">
+      Webmaster Console &middot; <span class="text-slate-400">v1.0</span>
+    </div>
+  </aside>
+  <div id="backdrop" class="fixed inset-0 z-20 bg-slate-900/50 backdrop-blur-sm hidden md:hidden"></div>
+
+  <!-- Main -->
+  <div class="flex-1 flex flex-col min-w-0">
+    {% if disable_email_sending %}
+    <div class="flex items-center gap-2 border-b border-amber-300 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 md:px-6">
+      <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+      <span><b>Email sending is disabled.</b> EMAIL notifications will not be delivered while <code class="rounded bg-amber-100 px-1 py-0.5 text-xs">DISABLE_EMAIL_SENDING</code> is enabled.</span>
+    </div>
+    {% endif %}
+    <header class="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-slate-200 bg-white/80 px-4 backdrop-blur-md md:px-6">
+      <div class="flex items-center gap-3">
+        <button id="menuBtn" class="md:hidden rounded-lg p-2 text-slate-600 hover:bg-slate-100" aria-label="Toggle menu">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <h1 class="text-lg font-semibold tracking-tight text-slate-900">{% block heading %}{% endblock %}</h1>
+      </div>
+      <div class="flex items-center gap-3 text-sm">
+        <button id="themeToggle" type="button" aria-label="Toggle theme" title="Toggle light / dark"
+                class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900">
+          <svg data-theme-icon="sun" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          <svg data-theme-icon="moon" class="hidden h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>
+        </button>
+        <div class="relative" id="userMenu">
+          <button id="userMenuBtn" type="button" aria-haspopup="true" aria-expanded="false"
+                  class="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900">
+            <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold uppercase text-brand-700">{{ request.user.username|slice:":2" }}</span>
+            <span class="hidden text-slate-700 sm:block">{{ request.user.username }}</span>
+            <svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <div id="userMenuPanel" class="absolute right-0 z-30 mt-2 hidden w-60 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-pop ring-1 ring-slate-200">
+            <div class="border-b border-slate-100 px-4 py-3">
+              <div class="truncate font-medium text-slate-900">{{ request.user.username }}</div>
+              {% if request.user.email %}<div class="truncate text-xs text-slate-500">{{ request.user.email }}</div>{% endif %}
+              {% if role %}<div class="mt-1.5"><span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 ring-1 ring-inset ring-slate-500/20">{{ role }}</span></div>{% endif %}
+            </div>
+            <a href="{% url 'en_console:profile' %}" class="flex items-center gap-2.5 px-4 py-2.5 text-slate-700 transition hover:bg-slate-50">
+              <svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              My Profile
+            </a>
+            <a href="{% url 'en_console:logout' %}" class="flex items-center gap-2.5 border-t border-slate-100 px-4 py-2.5 text-rose-600 transition hover:bg-rose-50">
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+              Logout
+            </a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 p-4 md:p-8">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="toasts" class="fixed bottom-5 right-5 z-50 space-y-2 w-80"></div>
+
+<!-- Modal -->
+<div id="modal" class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+  <div class="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-pop ring-1 ring-slate-200">
+    <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+      <h3 id="modalTitle" class="text-lg font-semibold tracking-tight text-slate-900"></h3>
+      <button data-modal-close class="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div id="modalBody" class="px-6 py-5"></div>
+    <div id="modalFooter" class="flex justify-end gap-2 border-t border-slate-100 bg-slate-50/60 px-6 py-4">
+      <button data-modal-close class="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-200">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>Cancel</button>
+      <button id="modalSave" class="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-brand-600/25 transition hover:bg-brand-700">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Shared webmaster-console client (jQuery 4.x)
+// ---------------------------------------------------------------------------
+const API_BASE = "{% url 'en_console:dashboard' %}api/";
+const CSRF = $('meta[name="csrf-token"]').attr('content');
+// Current user's console role, available to every page for UI gating.
+// (The server independently enforces all permissions — this is usability only.)
+const WC = { role: "{{ role|default:'' }}", isSuperuser: {{ request.user.is_superuser|yesno:"true,false" }} };
+window.WC = WC;
+
+$.ajaxSetup({
+  beforeSend: function (xhr, settings) {
+    if (!/^(GET|HEAD|OPTIONS|TRACE)$/.test(settings.type)) {
+      xhr.setRequestHeader('X-CSRFToken', CSRF);
+    }
+  }
+});
+
+function escapeHtml(v) {
+  if (v === null || v === undefined) return '';
+  return String(v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// ---------------------------------------------------------------------------
+// Shared inline-SVG icon set (stroke = currentColor) + type/status badges
+// ---------------------------------------------------------------------------
+const UI_ICONS = {
+  plus:       '<path d="M12 5v14M5 12h14"/>',
+  pencil:     '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  trash:      '<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>',
+  check:      '<path d="M20 6 9 17l-5-5"/>',
+  x:          '<path d="M6 6l12 12M18 6 6 18"/>',
+  arrowRight: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  spinner:    '<path d="M21 12a9 9 0 1 1-6.22-8.56"/>',
+  mail:       '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+  whatsapp:   '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"/>',
+  sms:        '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  checkCircle:'<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/>',
+  xCircle:    '<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/>',
+  clock:      '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>'
+};
+function icon(name, cls) {
+  return '<svg class="' + (cls || 'h-4 w-4') + '" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+    'stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">' + (UI_ICONS[name] || '') + '</svg>';
+}
+
+const TYPE_META = {
+  EMAIL:    { icon: 'mail',     cls: 'bg-sky-50 text-sky-700 ring-sky-600/20' },
+  WHATSAPP: { icon: 'whatsapp', cls: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20' },
+  SMS:      { icon: 'sms',      cls: 'bg-amber-50 text-amber-700 ring-amber-600/20' }
+};
+function typeBadge(t) {
+  const m = TYPE_META[t] || { icon: '', cls: 'bg-slate-100 text-slate-600 ring-slate-500/20' };
+  return '<span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ' +
+    m.cls + '">' + (m.icon ? icon(m.icon, 'h-3.5 w-3.5') : '') + escapeHtml(t) + '</span>';
+}
+
+const STATUS_META = {
+  SUCCESS:    { icon: 'checkCircle', cls: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20' },
+  FAILED:     { icon: 'xCircle',     cls: 'bg-rose-50 text-rose-700 ring-rose-600/20' },
+  QUEUED:     { icon: 'clock',       cls: 'bg-amber-50 text-amber-700 ring-amber-600/20' },
+  PROCESSING: { icon: 'spinner',     cls: 'bg-sky-50 text-sky-700 ring-sky-600/20', spin: true }
+};
+function statusBadge(s) {
+  const m = STATUS_META[s] || { icon: '', cls: 'bg-slate-100 text-slate-600 ring-slate-500/20' };
+  const ic = m.icon ? icon(m.icon, 'h-3.5 w-3.5' + (m.spin ? ' animate-spin' : '')) : '';
+  return '<span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ' +
+    m.cls + '">' + ic + escapeHtml(s) + '</span>';
+}
+
+function toast(message, type) {
+  type = type || 'info';
+  const conf = {
+    success: { bar: 'bg-emerald-500', icon: 'M20 6 9 17l-5-5' },
+    error:   { bar: 'bg-rose-500',    icon: 'M18 6 6 18M6 6l12 12' },
+    info:    { bar: 'bg-brand-500',   icon: 'M12 16v-4M12 8h.01' }
+  };
+  const c = conf[type] || conf.info;
+  const $t = $('<div>').addClass('flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-pop');
+  $t.html('<span class="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full ' + c.bar +
+    ' text-white"><svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">' +
+    '<path stroke-linecap="round" stroke-linejoin="round" d="' + c.icon + '"/></svg></span><span class="msg flex-1 pt-0.5"></span>');
+  $t.find('span.msg').text(message);
+  $('#toasts').append($t);
+  setTimeout(function () { $t.fadeOut(200, function () { $(this).remove(); }); }, 3500);
+}
+
+// Promise-based API helpers
+const api = {
+  request: function (method, url, data) {
+    return $.ajax({
+      url: url, type: method, dataType: 'json',
+      contentType: 'application/json',
+      data: data ? JSON.stringify(data) : undefined
+    });
+  },
+  list:   function (path, params) { return $.ajax({ url: API_BASE + path, type: 'GET', data: params, dataType: 'json' }); },
+  get:    function (path) { return api.request('GET', API_BASE + path); },
+  create: function (path, data) { return api.request('POST', API_BASE + path, data); },
+  update: function (path, data) { return api.request('PUT', API_BASE + path, data); },
+  remove: function (path) { return api.request('DELETE', API_BASE + path); }
+};
+
+function apiError(xhr) {
+  let msg = 'Something went wrong.';
+  try {
+    const r = xhr.responseJSON;
+    if (r && r.error && r.error.message) msg = r.error.message;
+    else if (r) msg = Object.keys(r).map(k => k + ': ' + (Array.isArray(r[k]) ? r[k].join(', ') : r[k])).join(' | ');
+  } catch (e) {}
+  toast(msg, 'error');
+}
+
+// Modal controller
+const Modal = {
+  _onSave: null,
+  open: function (title, bodyHtml, onSave) {
+    $('#modalTitle').text(title);
+    $('#modalBody').html(bodyHtml);
+    this._onSave = onSave;
+    $('#modalSave').toggle(!!onSave);
+    $('#modal').removeClass('hidden').addClass('flex');
+  },
+  close: function () { $('#modal').addClass('hidden').removeClass('flex'); this._onSave = null; },
+  busy: function (b) {
+    $('#modalSave').prop('disabled', b).html(
+      b ? icon('spinner', 'h-4 w-4 animate-spin') + 'Saving…' : icon('check', 'h-4 w-4') + 'Save'
+    );
+  }
+};
+$(document).on('click', '[data-modal-close]', function () { Modal.close(); });
+$('#modal').on('click', function (e) { if (e.target === this) Modal.close(); });
+$('#modalSave').on('click', function () { if (Modal._onSave) Modal._onSave(); });
+
+// Mobile sidebar
+$('#menuBtn').on('click', function () { $('#sidebar').toggleClass('-translate-x-full'); $('#backdrop').toggleClass('hidden'); });
+$('#backdrop').on('click', function () { $('#sidebar').addClass('-translate-x-full'); $(this).addClass('hidden'); });
+
+// Top-right user menu (My Profile / Logout)
+$('#userMenuBtn').on('click', function (e) {
+  e.stopPropagation();
+  const open = $('#userMenuPanel').toggleClass('hidden').is(':visible');
+  $(this).attr('aria-expanded', open ? 'true' : 'false');
+});
+$(document).on('click', function (e) {
+  if (!$(e.target).closest('#userMenu').length) {
+    $('#userMenuPanel').addClass('hidden');
+    $('#userMenuBtn').attr('aria-expanded', 'false');
+  }
+});
+$(document).on('keydown', function (e) { if (e.key === 'Escape') $('#userMenuPanel').addClass('hidden'); });
+
+// Light / dark theme switcher (persisted in localStorage; pre-applied in <head>)
+function updateThemeIcon(dark) {
+  $('[data-theme-icon="sun"]').toggleClass('hidden', !dark);
+  $('[data-theme-icon="moon"]').toggleClass('hidden', dark);
+}
+function applyTheme(dark) {
+  document.documentElement.classList.toggle('dark', dark);
+  try { localStorage.setItem('wc-theme', dark ? 'dark' : 'light'); } catch (e) {}
+  updateThemeIcon(dark);
+}
+updateThemeIcon(document.documentElement.classList.contains('dark'));
+$('#themeToggle').on('click', function () {
+  applyTheme(!document.documentElement.classList.contains('dark'));
+});
+
+// Form helpers
+function field(label, name, value, opts) {
+  opts = opts || {};
+  const type = opts.type || 'text';
+  const req = opts.required ? 'required' : '';
+  const ph = opts.placeholder ? 'placeholder="' + escapeHtml(opts.placeholder) + '"' : '';
+  let input;
+  const inputCls = 'w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30';
+  if (type === 'textarea') {
+    input = '<textarea name="' + name + '" rows="' + (opts.rows || 4) + '" ' + ph + ' class="' + inputCls + ' font-mono">' + escapeHtml(value) + '</textarea>';
+  } else if (type === 'checkbox') {
+    input = '<label class="inline-flex cursor-pointer items-center gap-2"><input type="checkbox" name="' + name + '" ' + (value ? 'checked' : '') + ' class="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"><span class="text-sm text-slate-600">Enabled</span></label>';
+  } else if (type === 'select') {
+    const options = (opts.options || []).map(o => {
+      const ov = typeof o === 'object' ? o.value : o;
+      const ol = typeof o === 'object' ? o.label : o;
+      return '<option value="' + escapeHtml(ov) + '" ' + (String(ov) === String(value) ? 'selected' : '') + '>' + escapeHtml(ol) + '</option>';
+    }).join('');
+    input = '<select name="' + name + '" class="' + inputCls + '">' + options + '</select>';
+  } else {
+    let extra = '';
+    if (opts.min !== undefined) extra += ' min="' + opts.min + '"';
+    if (opts.max !== undefined) extra += ' max="' + opts.max + '"';
+    if (opts.step !== undefined) extra += ' step="' + opts.step + '"';
+    input = '<input type="' + type + '" name="' + name + '" value="' + escapeHtml(value) + '" ' + ph + ' ' + req + extra + ' class="' + inputCls + '">';
+  }
+  const star = opts.required ? ' <span class="text-rose-500">*</span>' : '';
+  return '<div class="mb-4"><label class="mb-1.5 block text-sm font-medium text-slate-700">' + escapeHtml(label) + star + '</label>' + input + '</div>';
+}
+
+function readForm($scope) {
+  const out = {};
+  $scope.find('input, select, textarea').each(function () {
+    const $el = $(this);
+    const name = $el.attr('name');
+    if (!name) return;
+    if ($el.attr('type') === 'checkbox') out[name] = $el.is(':checked');
+    else out[name] = $el.val();
+  });
+  return out;
+}
+
+function confirmDelete(message, onYes) {
+  Modal.open('Please confirm', '<p class="text-sm text-slate-600">' + escapeHtml(message) + '</p>', function () {
+    onYes();
+  });
+  $('#modalSave').html(icon('trash', 'h-4 w-4') + 'Delete').removeClass('bg-brand-600 hover:bg-brand-700 shadow-brand-600/25').addClass('bg-rose-600 hover:bg-rose-700 shadow-rose-600/25');
+}
+// reset delete button styling whenever a normal modal opens
+const _open = Modal.open.bind(Modal);
+Modal.open = function (t, b, s) { $('#modalSave').html(icon('check', 'h-4 w-4') + 'Save').removeClass('bg-rose-600 hover:bg-rose-700 shadow-rose-600/25').addClass('bg-brand-600 hover:bg-brand-700 shadow-brand-600/25'); _open(t, b, s); };
+
+// ---------------------------------------------------------------------------
+// Standalone confirm / prompt dialogs (styled replacements for the browser's
+// native window.confirm / window.prompt). Each builds its own overlay at a
+// high z-index so it also works on top of other modals/overlays.
+// ---------------------------------------------------------------------------
+function confirmDialog(message, onConfirm, opts) {
+  opts = opts || {};
+  const title = opts.title || 'Please confirm';
+  const okText = opts.confirmText || 'Confirm';
+  const cancelText = opts.cancelText || 'Cancel';
+  const okCls = opts.danger
+    ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/25'
+    : 'bg-brand-600 hover:bg-brand-700 shadow-brand-600/25';
+  const $ov = $('<div>').addClass('fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm');
+  $ov.html(
+    '<div class="w-full max-w-md rounded-2xl bg-white shadow-pop ring-1 ring-slate-200">' +
+      '<div class="border-b border-slate-100 px-6 py-4"><h3 class="text-lg font-semibold tracking-tight text-slate-900">' + escapeHtml(title) + '</h3></div>' +
+      '<div data-cd-body class="px-6 py-5 text-sm text-slate-600"></div>' +
+      '<div class="flex justify-end gap-2 border-t border-slate-100 bg-slate-50/60 px-6 py-4">' +
+        '<button data-cd-cancel class="inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-200">' + escapeHtml(cancelText) + '</button>' +
+        '<button data-cd-ok class="inline-flex items-center rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-sm transition ' + okCls + '">' + escapeHtml(okText) + '</button>' +
+      '</div></div>'
+  );
+  $ov.find('[data-cd-body]').text(message);
+  function close() { $ov.remove(); }
+  $ov.on('click', function (e) { if (e.target === this) close(); });
+  $ov.find('[data-cd-cancel]').on('click', close);
+  $ov.find('[data-cd-ok]').on('click', function () { close(); if (onConfirm) onConfirm(); });
+  $('body').append($ov);
+  setTimeout(function () { $ov.find('[data-cd-ok]').trigger('focus'); }, 30);
+}
+
+// ---------------------------------------------------------------------------
+// Row action "kebab" (⋯) menu for list tables. Uses fixed positioning so the
+// panel is never clipped by a scrollable table container.
+// ---------------------------------------------------------------------------
+function menuItem(attrs, iconName, label, danger) {
+  const cls = danger ? 'text-rose-600 hover:bg-rose-50' : 'text-slate-700 hover:bg-slate-50';
+  return '<button type="button" ' + (attrs || '') + ' class="menu-item flex w-full items-center gap-2.5 px-4 py-2 text-left text-sm ' + cls + '">' +
+    icon(iconName, 'h-4 w-4') + label + '</button>';
+}
+function kebabMenu(itemsHtml) {
+  return '<div class="relative inline-block text-left" data-menu>' +
+    '<button type="button" data-menu-btn aria-label="Actions" class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700">' +
+      '<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>' +
+    '</button>' +
+    '<div data-menu-panel class="hidden z-[60] w-44 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-pop ring-1 ring-slate-200">' + itemsHtml + '</div>' +
+  '</div>';
+}
+$(document).on('click', '[data-menu-btn]', function (e) {
+  e.stopPropagation();
+  const $panel = $(this).siblings('[data-menu-panel]');
+  const willOpen = $panel.hasClass('hidden');
+  $('[data-menu-panel]').addClass('hidden');
+  if (willOpen) {
+    const r = this.getBoundingClientRect();
+    $panel.css({ position: 'fixed', top: Math.round(r.bottom + 4) + 'px', right: Math.round(window.innerWidth - r.right) + 'px', left: 'auto' }).removeClass('hidden');
+  }
+});
+$(document).on('click', function () { $('[data-menu-panel]').addClass('hidden'); });
+$(document).on('click', '.menu-item', function () { $('[data-menu-panel]').addClass('hidden'); });
+$(window).on('scroll', function () { $('[data-menu-panel]').addClass('hidden'); }, true);
+
+function promptDialog(message, defaultValue, onOk, opts) {
+  opts = opts || {};
+  const title = opts.title || 'Enter a value';
+  const okText = opts.confirmText || 'OK';
+  const inputType = opts.inputType || 'text';
+  const ph = opts.placeholder ? 'placeholder="' + escapeHtml(opts.placeholder) + '"' : '';
+  const inputCls = 'w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30';
+  const $ov = $('<div>').addClass('fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm');
+  $ov.html(
+    '<div class="w-full max-w-md rounded-2xl bg-white shadow-pop ring-1 ring-slate-200">' +
+      '<div class="border-b border-slate-100 px-6 py-4"><h3 class="text-lg font-semibold tracking-tight text-slate-900">' + escapeHtml(title) + '</h3></div>' +
+      '<div class="px-6 py-5"><label data-pd-msg class="mb-1.5 block text-sm font-medium text-slate-700"></label>' +
+        '<input type="' + inputType + '" data-pd-input ' + ph + ' class="' + inputCls + '"></div>' +
+      '<div class="flex justify-end gap-2 border-t border-slate-100 bg-slate-50/60 px-6 py-4">' +
+        '<button data-pd-cancel class="inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-200">Cancel</button>' +
+        '<button data-pd-ok class="inline-flex items-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-brand-600/25 transition hover:bg-brand-700">' + escapeHtml(okText) + '</button>' +
+      '</div></div>'
+  );
+  $ov.find('[data-pd-msg]').text(message);
+  $ov.find('[data-pd-input]').val(defaultValue == null ? '' : defaultValue);
+  function close() { $ov.remove(); }
+  function submit() { const v = $ov.find('[data-pd-input]').val(); close(); if (onOk) onOk(v); }
+  $ov.on('click', function (e) { if (e.target === this) close(); });
+  $ov.find('[data-pd-cancel]').on('click', close);
+  $ov.find('[data-pd-ok]').on('click', submit);
+  $ov.find('[data-pd-input]').on('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
+  $('body').append($ov);
+  setTimeout(function () { $ov.find('[data-pd-input]').trigger('focus').trigger('select'); }, 30);
+}
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

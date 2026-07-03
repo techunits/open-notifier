@@ -1,0 +1,97 @@
+{% extends "en_console/base.html" %}
+{% block title %}Integrations &middot; eNotifier{% endblock %}
+{% block heading %}Integrations{% endblock %}
+{% block content %}
+<div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+  <p class="text-sm text-slate-500">
+    Delivery providers discovered from <code class="rounded bg-slate-200 px-1">notifications/integrations/</code>.
+    Each provider ships a <code class="rounded bg-slate-200 px-1">sender.py</code> worker and a manifest that drives the configuration form.
+  </p>
+  <div class="relative">
+    <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.3-4.3"/></svg>
+    <input id="search" type="search" placeholder="Search providers…" autocomplete="off"
+           class="w-64 rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30">
+  </div>
+</div>
+<div id="cards" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+  <div class="h-48 animate-pulse rounded-2xl border border-slate-200 bg-white shadow-card"></div>
+  <div class="h-48 animate-pulse rounded-2xl border border-slate-200 bg-white shadow-card"></div>
+  <div class="h-48 animate-pulse rounded-2xl border border-slate-200 bg-white shadow-card"></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const CFG_URL = "{% url 'en_console:configurations' %}";
+const CAN_MANAGE = WC.role === 'PLATFORM_ADMIN';  // enabling a provider is global → platform only
+// typeBadge() is provided by base.html (shared, with notification-type icons)
+
+function statusPill(on) {
+  return on
+    ? '<span class="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">Enabled</span>'
+    : '<span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500 ring-1 ring-inset ring-slate-500/20">Disabled</span>';
+}
+function providerToggle(m) {
+  const on = !!m.is_enabled;
+  if (!CAN_MANAGE) return statusPill(on);
+  return '<button type="button" data-toggle="' + escapeHtml(m.key) + '" data-enabled="' + (on ? '1' : '0') + '" role="switch" aria-checked="' + on + '" ' +
+    'class="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition ' + (on ? 'bg-emerald-500' : 'bg-slate-300') + '">' +
+    '<span class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition ' + (on ? 'translate-x-4' : 'translate-x-1') + '"></span></button>' +
+    '<span class="text-xs font-medium ' + (on ? 'text-emerald-700' : 'text-slate-500') + '">' + (on ? 'Enabled' : 'Disabled') + '</span>';
+}
+
+function card(m) {
+  const fields = (m.config_fields || []).map(f =>
+    '<li class="flex items-center justify-between"><span class="font-mono">' + escapeHtml(f.name) + '</span>' +
+    '<span class="text-slate-400">' + escapeHtml(f.type) + (f.required ? ' *' : '') + '</span></li>').join('');
+  const logo = m.logo ? '<span class="inline-flex h-8 w-8 shrink-0">' + m.logo + '</span>' : '';
+  return '<div class="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-card transition hover:shadow-pop">' +
+    '<div class="mb-2 flex items-start justify-between gap-2">' +
+      '<div class="flex items-center gap-2">' + logo +
+        '<h3 class="text-base font-semibold">' + escapeHtml(m.name) + '</h3></div>' + typeBadge(m.notification_type) +
+    '</div>' +
+    '<p class="mb-2 font-mono text-xs text-slate-400">' + escapeHtml(m.provider) + '</p>' +
+    '<div class="mb-3 flex items-center gap-2">' + providerToggle(m) + '</div>' +
+    '<p class="mb-3 text-sm text-slate-600 flex-1">' + escapeHtml(m.description || 'No description provided.') + '</p>' +
+    '<div class="mb-3 rounded-lg bg-slate-50 p-3">' +
+      '<p class="mb-2 text-xs font-semibold uppercase text-slate-400">Config fields</p>' +
+      '<ul class="space-y-1 text-xs text-slate-600">' + (fields || '<li class="text-slate-400">None</li>') + '</ul>' +
+    '</div>' +
+    '<div class="flex items-center justify-between text-sm">' +
+      '<span class="text-slate-500">' + m.configuration_count + ' configuration(s)</span>' +
+      '<a href="' + CFG_URL + '" class="inline-flex items-center gap-1 font-medium text-brand hover:underline">Configure ' + icon('arrowRight', 'h-4 w-4') + '</a>' +
+    '</div></div>';
+}
+
+let ALL = [];
+
+function renderCards() {
+  const q = ($('#search').val() || '').trim().toLowerCase();
+  const items = !q ? ALL : ALL.filter(function (m) {
+    return [m.name, m.provider, m.key, m.description, m.notification_type]
+      .some(function (v) { return (v || '').toLowerCase().indexOf(q) !== -1; });
+  });
+  if (!ALL.length) { $('#cards').html('<p class="text-slate-400">No integrations found.</p>'); return; }
+  $('#cards').html(items.length ? items.map(card).join('')
+    : '<p class="col-span-full text-slate-400">No providers match “' + escapeHtml(q) + '”.</p>');
+}
+
+function loadIntegrations() {
+  api.list('integrations/').done(function (d) {
+    ALL = d.integrations || [];
+    renderCards();
+  }).fail(apiError);
+}
+
+$('#search').on('input', renderCards);
+
+$('#cards').on('click', '[data-toggle]', function () {
+  const key = $(this).data('toggle');
+  const next = String($(this).data('enabled')) !== '1';
+  api.request('PATCH', API_BASE + 'integrations/' + encodeURIComponent(key) + '/', { is_enabled: next })
+    .done(function () { toast('Provider ' + (next ? 'enabled' : 'disabled'), 'success'); loadIntegrations(); })
+    .fail(apiError);
+});
+
+loadIntegrations();
+</script>
+{% endblock %}
